@@ -1,0 +1,25 @@
+# pkio config for claude
+
+cmd-args:
+- --dangerously-skip-permissions
+
+dirs:
+  read-write:
+  - /tmp
+  - /tmp/claude-$(shell id -u)
+  - ~/.cache/makes
+    # - /tmp/.com.google.Chrome.*
+  read-only:
+  - /proc
+  - /usr/bin
+  - /usr/local/bin
+  - /usr/libexec
+  - /usr/include
+  - ~/.config/gh
+
+files:
+  read-only:
+  - /etc/gitconfig
+
+env:
+  CLAUDE_CODE_DISABLE_TERMINAL_TITLE: 1

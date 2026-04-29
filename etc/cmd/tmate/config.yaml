@@ -1,0 +1,18 @@
+# pkio config for tmate
+
+dirs:
+  read-write:
+  - /tmp
+  read-only:
+  - /proc
+  - ~/.ssh
+  - /etc/ssh
+
+files:
+  read-only:
+  - ~/.bashrc
+  - ~/.bash_profile
+  - ~/.profile
+  - ~/.zshrc
+  read-write:
+  - /dev/ptmx

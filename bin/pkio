@@ -1,0 +1,424 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+main() (
+  parse-args "$@"
+
+  if $do_help; then
+    do-help
+    exit
+  fi
+
+  if [[ -n $do_complete ]]; then
+    [[ ${PKIO_ROOT-} ]] ||
+      die "PKIO_ROOT not set" \
+          "Try: source /path/to/pkio/.rc"
+    do-complete "$do_complete"
+    exit
+  fi
+
+  if $do_update; then
+    do-update
+    exit
+  fi
+
+  if $do_reset; then
+    do-reset
+    exit
+  fi
+
+  if $do_list; then
+    do-list
+    exit
+  fi
+
+  setup
+
+  if $do_history; then
+    echo "$config_home/${base#/}/shell_history"
+    exit
+  fi
+
+  if [[ -n $do_config ]]; then
+    do-config "$do_config"
+    exit
+  fi
+
+  if [[ -z $program ]]; then
+    program=$(detect-shell)
+    do_shell=true
+  fi
+
+  export PKIO_PROGRAM=$program
+
+  setup-history
+
+  if $do_shell; then
+    setup-shell
+  fi
+
+  build-config
+
+  if $do_show_config; then
+    cat "$PKIO_CONFIG_MK"
+    exit
+  fi
+
+  # Build deps and run program-specific setup
+  make -f "$root/Makefile" pkio-setup
+
+  # Get nono path, opts, and cmd-args from Make
+  local env_output
+  env_output=$(make -f "$root/Makefile" pkio-env)
+  eval "$env_output"
+
+  # Clean up shell rcfile on exit
+  if [[ -n ${shell_rcfile-} ]]; then
+    trap 'rm -rf "$(dirname "$shell_rcfile")"' EXIT
+  fi
+
+  # Run nono directly to preserve argument quoting
+  # shellcheck disable=2086
+  (
+    set -x
+    $PKIO_NONO run $PKIO_NONO_OPTS -- \
+      "$program" $PKIO_CMD_ARGS "${program_args[@]}"
+  )
+)
+
+parse-args() {
+  do_help=false
+  do_update=false
+  do_reset=false
+  do_list=false
+  do_shell=false
+  do_history=false
+  do_show_config=false
+  do_config=
+  do_complete=
+  shell_override=
+  program=
+  program_args=()
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --help)
+        do_help=true
+        return
+        ;;
+      --update)
+        do_update=true
+        return
+        ;;
+      --reset)
+        do_reset=true
+        return
+        ;;
+      --list)
+        do_list=true
+        return
+        ;;
+      --config)
+        do_config=__project__
+        return
+        ;;
+      --config=*)
+        do_config=${1#--config=}
+        return
+        ;;
+      --complete=*)
+        do_complete=${1#--complete=}
+        return
+        ;;
+      --history)
+        do_history=true
+        return
+        ;;
+      --show-config)
+        do_show_config=true
+        ;;
+      --shell)
+        do_shell=true
+        ;;
+      --shell=*)
+        do_shell=true
+        shell_override=${1#--shell=}
+        ;;
+      --*)
+        die "Unknown flag: $1"
+        ;;
+      *)
+        program=$1
+        shift
+        program_args=("$@")
+        return
+        ;;
+    esac
+    shift
+  done
+}
+
+setup() {
+  [[ ${PKIO_ROOT-} ]] ||
+    die "PKIO_ROOT not set" \
+        "Try: source /path/to/pkio/.rc"
+
+  [[ -e $PKIO_ROOT/Makefile ]] ||
+    die "PKIO_ROOT='$PKIO_ROOT' is broken"
+
+  [[ ! ${NONO_CAP_FILE-} ]] ||
+    die "Already inside a nono sandbox — can't nest pkio"
+
+  [[ $PWD != "$HOME" ]] ||
+    die "Don't run pkio in your HOME directory"
+
+  root=$PKIO_ROOT
+  etc=$root/etc
+  share=$root/share
+  config_home=${PKIO_CONFIG:-$HOME/.config/pkio}
+  cache_home=$HOME/.cache/pkio/local
+  tmp_dir=$cache_home/tmp
+  cwd=$(pwd -P)
+  base=$(get-project-base)
+  export PKIO_BASE=$base
+
+  mkdir -p "$tmp_dir"
+}
+
+build-config() {
+  local config_files=()
+
+  # Level 1: shipped base defaults
+  local f=$etc/config.yaml
+  [[ ! -e $f ]] || config_files+=("$f")
+
+  # Level 2: shipped program defaults
+  f=$etc/cmd/$program/config.yaml
+  [[ ! -e $f ]] || config_files+=("$f")
+
+  # Level 3: user global (all programs)
+  f=$config_home/config.yaml
+  [[ ! -e $f ]] || config_files+=("$f")
+
+  # Level 4: user global per-program
+  f=$config_home/cmd/$program.yaml
+  [[ ! -e $f ]] || config_files+=("$f")
+
+  # Level 5: per-project (all programs)
+  f=$config_home/${base#/}/config.yaml
+  [[ ! -e $f ]] || config_files+=("$f")
+
+  # Level 6: per-project per-program
+  f=$config_home/${base#/}/$program.yaml
+  [[ ! -e $f ]] || config_files+=("$f")
+
+  # Ensure project config dir exists
+  local project_dir=$config_home/${base#/}
+  [[ -d $project_dir ]] || mkdir -p "$project_dir"
+
+  # Generate config.mk from layered configs
+  make -f "$root/Makefile" ys >/dev/null
+  local ys
+  ys=$(make -f "$root/Makefile" ys)
+  export PKIO_CONFIG_MK=$tmp_dir/config.mk
+  "$ys" "$root/util/config-yaml-to-mk" \
+    "${config_files[@]}" > "$PKIO_CONFIG_MK"
+}
+
+do-help() {
+  cat <<'EOF'
+pkio - Project Kernel Isolation Orchestrator
+
+Usage: pkio [flags] <program> [args...]
+
+Run any program inside a nono kernel-level sandbox with per-project
+configuration.
+
+Flags:
+  --config[=SPEC]     Edit config in $EDITOR
+                        --config          project config (all programs)
+                        --config=claude   project config for claude
+                        --config=claude:g global config for claude
+                        --config=pkio     global config (all programs)
+  --show-config       Print merged config for a program
+  --shell[=SHELL]     Start a sandboxed subshell
+  --complete=SHELL    Output tab completion (bash, zsh, fish)
+  --history           Print path to per-project shell history file
+  --list              List programs with curated defaults
+  --update            Update pkio (git pull + rebuild)
+  --reset             Remove cached dependencies
+  --help              Show this help
+
+Examples:
+  pkio                Start a sandboxed subshell
+  pkio claude         Run Claude Code in sandbox
+  pkio tmate          Run tmate in sandbox
+EOF
+}
+
+do-update() (
+  [[ ${PKIO_ROOT-} ]] ||
+    die "PKIO_ROOT not set"
+  set -x
+  git -C "$PKIO_ROOT" pull
+  rm -fr "$HOME/.cache/pkio/makes"
+  rm -fr "$HOME/.cache/pkio/local"
+)
+
+do-reset() (
+  set -x
+  rm -fr "$HOME/.cache/pkio/local"
+)
+
+do-list() {
+  [[ ${PKIO_ROOT-} ]] ||
+    die "PKIO_ROOT not set"
+  echo "Programs with curated defaults:"
+  for d in "$PKIO_ROOT"/etc/cmd/*/; do
+    [[ -d $d ]] || continue
+    echo "  $(basename "$d")"
+  done
+}
+
+do-config() {
+  local spec=$1
+  local file
+
+  case $spec in
+    __project__)
+      # --config (no value): project config for all programs
+      local project_dir=$config_home/${base#/}
+      [[ -d $project_dir ]] || mkdir -p "$project_dir"
+      file=$project_dir/config.yaml
+      ;;
+    pkio)
+      # --config=pkio: global config for all programs
+      [[ -d $config_home ]] || mkdir -p "$config_home"
+      file=$config_home/config.yaml
+      ;;
+    *:g)
+      # --config=claude:g: global config for specific program
+      local prog=${spec%:g}
+      [[ -d $config_home/cmd ]] || mkdir -p "$config_home/cmd"
+      file=$config_home/cmd/$prog.yaml
+      ;;
+    *)
+      # --config=claude: project config for specific program
+      local project_dir=$config_home/${base#/}
+      [[ -d $project_dir ]] || mkdir -p "$project_dir"
+      file=$project_dir/$spec.yaml
+      ;;
+  esac
+
+  # Create from template if it doesn't exist
+  if [[ ! -e $file ]]; then
+    cp "$share/config.yaml" "$file"
+  fi
+
+  run "${EDITOR:-vim}" "$file"
+}
+
+setup-history() {
+  local history_dir=$config_home/${base#/}
+  [[ -d $history_dir ]] || mkdir -p "$history_dir"
+  export HISTFILE=$history_dir/shell_history
+  PKIO_NONO_OPTS_EXTRA="${PKIO_NONO_OPTS_EXTRA-} --allow $history_dir"
+  export PKIO_NONO_OPTS_EXTRA
+}
+
+setup-shell() {
+  local shell_prog
+  if [[ -n ${shell_override-} ]]; then
+    shell_prog=$shell_override
+  else
+    shell_prog=$program
+  fi
+
+  export PKIO_PROGRAM=$shell_prog
+  export PKIO_SHELL_ACTIVE=1
+  export PKIO_PS1_PREFIX="[pkio] "
+
+  # Create a minimal rcfile under /tmp (nono allows /tmp by default).
+  # Don't source user rc files — they pull in arbitrary paths the
+  # sandbox can't anticipate.
+  local rc_dir=/tmp/pkio-$$
+  mkdir -p "$rc_dir"
+  shell_rcfile=$rc_dir/pkio-rc
+  case $shell_prog in
+    bash)
+      cat > "$shell_rcfile" <<RCEOF
+HISTFILE=$HISTFILE
+PS1="\${PKIO_PS1_PREFIX}\u@\h:\w\$ "
+trap 'exit 0' EXIT
+RCEOF
+      export PKIO_PROGRAM_ARGS="--rcfile $shell_rcfile"
+      ;;
+    zsh)
+      cat > "$shell_rcfile" <<RCEOF
+HISTFILE=$HISTFILE
+PS1="\${PKIO_PS1_PREFIX}%n@%m:%~%# "
+zshexit() { exit 0; }
+RCEOF
+      export ZDOTDIR=$rc_dir
+      mv "$shell_rcfile" "$rc_dir/.zshrc"
+      shell_rcfile="$rc_dir/.zshrc"
+      export PKIO_PROGRAM_ARGS=
+      ;;
+    *)
+      rm -f "$shell_rcfile"
+      shell_rcfile=
+      export PKIO_PROGRAM_ARGS=
+      ;;
+  esac
+}
+
+do-complete() {
+  local shell=$1
+  local ext=sh
+  [[ $shell != fish ]] || ext=fish
+  local file=$PKIO_ROOT/share/complete/$shell.$ext
+  case $shell in
+    bash|zsh|fish)
+      [[ -e $file ]] ||
+        die "Completion file not found: $file"
+      cat "$file"
+      ;;
+    *)
+      die "Unknown shell for completion: $shell" \
+          "Use: bash, zsh, or fish"
+      ;;
+  esac
+}
+
+detect-shell() {
+  local parent_shell
+  parent_shell=$(ps -o comm= -p "$PPID" 2>/dev/null || true)
+  parent_shell=${parent_shell##*/}
+  parent_shell=${parent_shell#-}
+  case $parent_shell in
+    bash|zsh|fish) echo "$parent_shell" ;;
+    *) echo bash ;;
+  esac
+}
+
+get-project-base() (
+  if ! common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null); then
+    pwd -P
+    return
+  fi
+  bare=$(git config --file="$common/config" --get core.bare 2>/dev/null || true)
+  if [[ $bare == true || $(basename "$common") != .git ]]; then
+    echo "$common"
+  else
+    (cd "$common/.." && pwd -P)
+  fi
+)
+
+run() ( set -x; "$@" )
+
+die() { printf "%s\n" Error: "$@" >&2; exit 1; }
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+  main "$@"
+fi

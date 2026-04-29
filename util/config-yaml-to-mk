@@ -1,0 +1,127 @@
+#!/usr/bin/env ys-0
+
+defn main(*yaml-files):
+  say:
+    join "\n\n":
+      remove falsey?:
+        map yaml-to-mk: yaml-files
+
+defn yaml-to-mk(file):
+  when fs-e(file):
+    data =: file:read:yaml/load
+    when data:
+      join "\n\n":
+        remove falsey?:
+          list:
+            mk-makefile(data)
+            mk-browser(data)
+            mk-browser-deps(data)
+            mk-makes(data)
+            mk-path(data)
+            mk-env(data)
+            mk-cmd-args(data)
+            mk-nono-opts(data)
+
+defn mk-makefile(data):
+  data.makefile
+
+defn mk-browser(data):
+  browser =: data.browser
+  cond:
+    browser == 'google-chrome':: |-
+      # GOOGLE-CHROME := /tmp/pkio-$(shell id -u)/google-chrome
+      GOOGLE-CHROME := /tmp/claude-$(shell id -u)/google-chrome
+      _ := \
+      $(shell \
+        mkdir -p $(dir $(GOOGLE-CHROME)) && \
+        ( \
+          echo '#!/bin/bash'; \
+          echo 'exec /usr/bin/google-chrome --no-sandbox --disable-dev-shm-usage "$$@"' \
+        ) > $(GOOGLE-CHROME) \
+          && chmod +x $(GOOGLE-CHROME) \
+      )
+      PKIO-EXPORT-ENV += BROWSER=$(GOOGLE-CHROME)
+
+defn mk-browser-deps(data):
+  when (data.browser == 'google-chrome') && linux?():
+    joins:
+      vector:
+        mk-entry('--read' '/opt/google/chrome')
+        mk-entry('--read' '/dev/dri')
+        mk-entry('--allow' '/tmp')
+        mk-entry('--allow' '~/.config/google-chrome')
+
+defn linux?():
+  System/getProperty("os.name") == 'Linux'
+
+defn mk-makes(data):
+  when data.makes:
+    reduce _ '' data.makes:
+      fn(o name):
+        o + "include \\$(MAKES)/$name.mk\n"
+
+defn mk-path(data):
+  p =: get(data 'path')
+  when p && p.prepend:
+    DBG: "override PATH := $(p.prepend.join(':')):\\$(PATH)\nexport PATH"
+
+defn mk-env(data):
+  when data.env:
+    reduce _ '' data.env:
+      fn(o entry):
+        o + "PKIO-EXPORT-ENV += $(key entry)=$(val entry)\n"
+
+defn mk-cmd-args(data):
+  when data.cmd-args:
+    reduce _ '' data.cmd-args:
+      fn(o arg):
+        o + "PKIO-CMD-ARGS += $arg\n"
+
+defn mk-nono-opts(data):
+  str:
+    mk-dirs(data)
+    mk-files(data)
+    mk-net(data)
+
+defn mk-dirs(data):
+  when data.dirs:
+    str:
+      mk-flag-list(data.dirs.read-write '--allow')
+      mk-flag-list(data.dirs.read-only '--read')
+
+defn mk-files(data):
+  when data.files:
+    str:
+      mk-flag-list(data.files.read-only '--read-file')
+      mk-flag-list(data.files.read-write '--allow-file')
+
+defn mk-net(data):
+  when data.net:
+    mk-net-inner: data.net
+
+defn mk-net-inner(net):
+  str:
+    mk-flag-list(net.domains '--allow-domain')
+    mk-net-ports(net.ports)
+
+defn mk-net-ports(ports):
+  when ports:
+    str:
+      mk-flag-list(ports.listen '--listen-port')
+      mk-flag-list(ports.open '--open-port')
+
+defn expand-home(path):
+  home =: System/getenv('HOME')
+  if path =~ /^~/:
+    then: home + subs(path 1)
+    else: path
+
+defn mk-entry(flag val):
+  v =: expand-home(str(val))
+  =>: "PKIO-NONO-OPTS += $flag $v\n"
+
+defn mk-flag-list(vals flag):
+  when vals:
+    reduce _ '' vals:
+      fn(o val):
+        o + mk-entry(flag val)

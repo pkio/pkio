@@ -1,0 +1,12 @@
+{
+  "meta": {
+    "name": "tmate",
+    "description": "Profile for tmate terminal sharing"
+  },
+  "security": {
+    "groups": []
+  },
+  "workdir": {
+    "access": "readwrite"
+  }
+}

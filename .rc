@@ -1,0 +1,41 @@
+# shellcheck shell=bash disable=2086
+
+# Works for bash, fish and zsh.
+
+# bash
+test -n "$BASH_VERSION" && eval '
+PKIO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+PATH=$PKIO_ROOT/bin:$PATH
+MANPATH=$PKIO_ROOT/man:${MANPATH-}
+PKIO_SHELL=bash
+export PATH MANPATH PKIO_ROOT PKIO_SHELL
+source <(pkio --complete=bash)
+return
+'
+
+# fish
+test -n "$FISH_VERSION" && eval '
+set PKIO_ROOT (cd (dirname (status filename)) && pwd -P)
+set PATH $PKIO_ROOT/bin:$PATH
+set MANPATH $PKIO_ROOT/man:$MANPATH
+set -gx PKIO_SHELL fish
+export PATH MANPATH PKIO_ROOT PKIO_SHELL
+pkio --complete=fish | source
+exit
+'
+
+# zsh
+test -n "$ZSH_VERSION" && eval '
+PKIO_ROOT=$(cd "$(dirname "$0")" && pwd -P)
+PATH=$PKIO_ROOT/bin:$PATH
+MANPATH=$PKIO_ROOT/man:${MANPATH-}
+PKIO_SHELL=zsh
+export PATH MANPATH PKIO_ROOT PKIO_SHELL
+source <(pkio --complete=zsh)
+return
+'
+
+echo "ERROR: pkio/.rc is not set up to work for shell '$0'"
+false
+
+# vim: ft=sh:
