@@ -40,6 +40,21 @@ main() (
     exit
   fi
 
+  if [[ -n $do_stash ]]; then
+    do-stash "$do_stash"
+    exit
+  fi
+
+  if [[ -n $do_link ]]; then
+    do-link "$do_link"
+    exit
+  fi
+
+  if $do_unlink; then
+    do-unlink
+    exit
+  fi
+
   if [[ -n $do_config ]]; then
     do-config "$do_config"
     exit
@@ -97,6 +112,9 @@ parse-args() {
   do_show_config=false
   do_config=
   do_complete=
+  do_stash=
+  do_link=
+  do_unlink=false
   shell_override=
   program=
   program_args=()
@@ -144,6 +162,22 @@ parse-args() {
       --shell=*)
         do_shell=true
         shell_override=${1#--shell=}
+        ;;
+      --stash=*)
+        do_stash=${1#--stash=}
+        return
+        ;;
+      --link)
+        do_link=__all__
+        return
+        ;;
+      --link=*)
+        do_link=${1#--link=}
+        return
+        ;;
+      --unlink)
+        do_unlink=true
+        return
         ;;
       --*)
         die "Unknown flag: $1"
@@ -244,6 +278,9 @@ Flags:
   --show-config       Print merged config for a program
   --shell[=SHELL]     Start a sandboxed subshell
   --complete=SHELL    Output tab completion (bash, zsh, fish)
+  --stash=<file>      Move file to config stash and symlink it back
+  --link[=<file>]     Create symlinks for stashed files
+  --unlink            Remove symlinks to stashed files
   --history           Print path to per-project shell history file
   --list              List programs with curated defaults
   --update            Update pkio (git pull + rebuild)
@@ -262,13 +299,15 @@ do-update() (
     die "PKIO_ROOT not set"
   set -x
   git -C "$PKIO_ROOT" pull
-  rm -fr "$HOME/.cache/pkio/makes"
-  rm -fr "$HOME/.cache/pkio/local"
+  local cache=${PKIO_CACHE:-$HOME/.cache/pkio}
+  rm -fr "$cache/makes"
+  rm -fr "$cache/local"
 )
 
 do-reset() (
+  local cache=${PKIO_CACHE:-$HOME/.cache/pkio}
   set -x
-  rm -fr "$HOME/.cache/pkio/local"
+  rm -fr "$cache/local"
 )
 
 do-list() {
@@ -317,6 +356,106 @@ do-config() {
   fi
 
   run "${EDITOR:-vim}" "$file"
+}
+
+do-stash() {
+  local file=$1
+  local src=$cwd/$file
+  local stash_dir=$config_home/${base#/}/stash
+  local dest=$stash_dir/$file
+
+  [[ -e $src ]] ||
+    die "File not found: $file"
+  [[ ! -L $src ]] ||
+    die "File is already a symlink: $file"
+  [[ -f $src ]] ||
+    die "Not a regular file: $file"
+  [[ ! -e $dest ]] ||
+    die "File already stashed: $dest"
+
+  mkdir -p "$(dirname "$dest")"
+  mv "$src" "$dest"
+  ln -s "$dest" "$src"
+  echo "Stashed: $file -> $dest"
+}
+
+do-link() {
+  local spec=$1
+  local stash_dir=$config_home/${base#/}/stash
+
+  if [[ $spec == __all__ ]]; then
+    # --link: link all from current project's stash
+    [[ -d $stash_dir ]] ||
+      die "No stash directory: $stash_dir"
+    link-all-from "$stash_dir"
+
+  elif [[ -d $cwd/$spec ]]; then
+    # --link=<dir>: resolve dir and link all from its stash
+    local dir
+    dir=$(cd "$cwd/$spec" && pwd -P)
+    local dir_stash=$config_home/${dir#/}/stash
+    [[ -d $dir_stash ]] ||
+      die "No stash directory: $dir_stash"
+    link-all-from "$dir_stash"
+
+  else
+    # --link=<file>: link specific file from current project's stash
+    [[ -d $stash_dir ]] ||
+      die "No stash directory: $stash_dir"
+    local src=$stash_dir/$spec
+    local dest=$cwd/$spec
+    [[ -e $src ]] ||
+      die "Not in stash: $spec"
+    [[ ! -e $dest ]] ||
+      die "Already exists: $dest"
+    ln -s "$src" "$dest"
+    echo "Linked: $spec -> $src"
+  fi
+}
+
+link-all-from() {
+  local stash_dir=$1
+  local count=0
+  for src in "$stash_dir"/*; do
+    [[ -e $src ]] || continue
+    local name
+    name=$(basename "$src")
+    if [[ -e $cwd/$name ]]; then
+      echo "Skipping (exists): $name"
+      continue
+    fi
+    ln -s "$src" "$cwd/$name"
+    echo "Linked: $name -> $src"
+    (( count++ )) || true
+  done
+  if [[ $count -eq 0 ]]; then
+    echo "No new files to link"
+  fi
+}
+
+do-unlink() {
+  local stash_dir=$config_home/${base#/}/stash
+
+  if [[ ! -d $stash_dir ]]; then
+    echo "No pkio stash for: $base"
+    return 1
+  fi
+
+  local count=0
+  for src in "$stash_dir"/*; do
+    [[ -e $src ]] || continue
+    local name
+    name=$(basename "$src")
+    local link=$cwd/$name
+    if [[ -L $link ]] && [[ $(readlink "$link") == "$src" ]]; then
+      rm "$link"
+      echo "Unlinked: $name"
+      (( count++ )) || true
+    fi
+  done
+  if [[ $count -eq 0 ]]; then
+    echo "No stash symlinks to remove"
+  fi
 }
 
 setup-history() {
