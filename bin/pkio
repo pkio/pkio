@@ -35,6 +35,8 @@ main() (
 
   setup
 
+  check-completions
+
   if $do_history; then
     echo "$config_home/${base#/}/shell_history"
     exit
@@ -455,6 +457,23 @@ do-unlink() {
   done
   if [[ $count -eq 0 ]]; then
     echo "No stash symlinks to remove"
+  fi
+}
+
+check-completions() {
+  local marker=$cache_home/completions-loaded
+  local changed=false
+  for f in "$share"/complete/*; do
+    [[ -e $f ]] || continue
+    if [[ $f -nt $marker ]]; then
+      changed=true
+      break
+    fi
+  done
+  if $changed; then
+    mkdir -p "$cache_home"
+    touch "$marker"
+    echo "pkio: Completions have changed. Run: source $root/.rc" >&2
   fi
 }
 
