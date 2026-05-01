@@ -211,7 +211,7 @@ setup() {
   etc=$root/etc
   share=$root/share
   config_home=${PKIO_CONFIG:-$HOME/.config/pkio}
-  cache_home=$HOME/.cache/pkio/local
+  cache_home=${PKIO_CACHE:-$HOME/.cache/pkio}/local
   tmp_dir=$cache_home/tmp
   cwd=$(pwd -P)
   base=$(get-project-base)
