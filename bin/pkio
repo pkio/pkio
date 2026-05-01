@@ -220,6 +220,25 @@ setup() {
   export PKIO_BASE=$base
 
   mkdir -p "$tmp_dir"
+
+  # When in a git worktree, .git is a file pointing to the real git dir.
+  # Grant read-write access to the actual .git directory so git works.
+  local git_file=$cwd/.git
+  if [[ -f $git_file ]]; then
+    local gitdir
+    gitdir=$(sed -n 's/^gitdir: //p' "$git_file")
+    if [[ -n $gitdir ]]; then
+      # Resolve relative paths
+      if [[ $gitdir != /* ]]; then
+        gitdir=$cwd/$gitdir
+      fi
+      # Get the top-level .git dir (parent of worktrees/)
+      local git_common_dir
+      git_common_dir=$(cd "$gitdir" && cd "$(git rev-parse --git-common-dir)" && pwd -P)
+      PKIO_NONO_OPTS_EXTRA="${PKIO_NONO_OPTS_EXTRA-} --allow $git_common_dir"
+      export PKIO_NONO_OPTS_EXTRA
+    fi
+  fi
 }
 
 build-config() {
