@@ -11,6 +11,7 @@ trap 'rm -rf "$tmp"' EXIT
 export PKIO_ROOT=$ROOT
 export PKIO_CONFIG=$tmp/config
 export PKIO_CACHE=$tmp/cache
+unset NONO_CAP_FILE
 
 save_dir=$PWD
 
@@ -40,7 +41,7 @@ git -C "$project_dir" init -q
 
 echo "test content" > "$project_dir/myfile.txt"
 
-cd "$project_dir"
+cd "$project_dir" || exit
 
 output=$("$pkio" --stash=myfile.txt 2>&1)
 ok $? "--stash exits successfully"
@@ -48,8 +49,8 @@ like "$output" "Stashed:" \
   "--stash prints stash confirmation"
 
 # File should now be a symlink
-test -L myfile.txt
-ok $? "Stashed file is now a symlink"
+if test -L myfile.txt; then rc=0; else rc=1; fi
+ok $rc "Stashed file is now a symlink"
 
 # Original content preserved
 content=$(cat myfile.txt)
@@ -58,24 +59,24 @@ is "$content" "test content" \
 
 # Stash dir should have the file
 stash_dir=$PKIO_CONFIG/${project_dir#/}/stash
-test -f "$stash_dir/myfile.txt"
-ok $? "File exists in stash directory"
+if test -f "$stash_dir/myfile.txt"; then rc=0; else rc=1; fi
+ok $rc "File exists in stash directory"
 
 # --unlink removes the symlink
 output=$("$pkio" --unlink 2>&1)
 ok $? "--unlink exits successfully"
 like "$output" "Unlinked: myfile.txt" \
   "--unlink prints confirmation"
-test ! -e myfile.txt
-ok $? "Symlink removed after --unlink"
+if test ! -e myfile.txt; then rc=0; else rc=1; fi
+ok $rc "Symlink removed after --unlink"
 
 # --link restores the symlink
 output=$("$pkio" --link 2>&1)
 ok $? "--link exits successfully"
 like "$output" "Linked:" \
   "--link prints confirmation"
-test -L myfile.txt
-ok $? "File is a symlink again after --link"
+if test -L myfile.txt; then rc=0; else rc=1; fi
+ok $rc "File is a symlink again after --link"
 content=$(cat myfile.txt)
 is "$content" "test content" \
   "Re-linked file has original content"
@@ -86,7 +87,7 @@ no_stash_dir=$tmp/no-stash
 mkdir -p "$no_stash_dir"
 git -C "$no_stash_dir" init -q
 
-cd "$no_stash_dir"
+cd "$no_stash_dir" || exit
 output=$("$pkio" --unlink 2>&1) || rc=$?
 rc=${rc:-0}
 isnt "$rc" 0 \
@@ -96,7 +97,7 @@ like "$output" "No pkio stash for:" \
 
 
 # --stash errors
-cd "$project_dir"
+cd "$project_dir" || exit
 
 # Stash a nonexistent file
 output=$("$pkio" --stash=nonexistent.txt 2>&1) || true
@@ -116,12 +117,12 @@ like "$output" "Unknown flag" \
 
 
 # Running from HOME is rejected
-cd "$HOME"
+cd "$HOME" || exit
 output=$("$pkio" --show-config 2>&1) || true
 like "$output" "Don't run pkio in your HOME" \
   "Running from HOME is rejected"
 
 
-cd "$save_dir"
+cd "$save_dir" || exit
 
 done-testing
