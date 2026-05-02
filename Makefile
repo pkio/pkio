@@ -1,7 +1,12 @@
 PKIO_ROOT ?= $(patsubst %/,%,$(dir $(abspath $(firstword $(MAKEFILE_LIST)))))
 
+ifeq (,$(shell cat $(HOME)/.cache/pkio/makes/init.mk >/dev/null 2>&1 || echo in-pkio))
 M := $(HOME)/.cache/pkio/makes
 export MAKES_LOCAL_DIR := $(HOME)/.cache/pkio/local
+else
+M := .cache/makes
+export MAKES_LOCAL_DIR := .cache/local
+endif
 
 $(shell [ -d $M ] || (git clone -q https://github.com/makeplus/makes $M))
 
