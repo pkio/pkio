@@ -86,7 +86,6 @@ main() (
   make -f "$root/Makefile" pkio-setup
 
   # Get nono path, opts, and cmd-args from Make
-  local env_output
   env_output=$(make -f "$root/Makefile" pkio-env)
   eval "$env_output"
 
@@ -281,7 +280,7 @@ build-config() {
     "${config_files[@]}" > "$PKIO_CONFIG_MK"
 }
 
-do-help() {
+do-help() (
   cat <<'EOF'
 pkio - Project Kernel Isolation Orchestrator
 
@@ -313,25 +312,25 @@ Examples:
   pkio claude         Run Claude Code in sandbox
   pkio tmate          Run tmate in sandbox
 EOF
-}
+)
 
 do-update() (
   [[ ${PKIO_ROOT-} ]] ||
     die "PKIO_ROOT not set"
   set -x
   git -C "$PKIO_ROOT" pull
-  local cache=${PKIO_CACHE:-$HOME/.cache/pkio}
+  cache=${PKIO_CACHE:-$HOME/.cache/pkio}
   rm -fr "$cache/makes"
   rm -fr "$cache/local"
 )
 
 do-reset() (
-  local cache=${PKIO_CACHE:-$HOME/.cache/pkio}
+  cache=${PKIO_CACHE:-$HOME/.cache/pkio}
   set -x
   rm -fr "$cache/local"
 )
 
-do-list() {
+do-list() (
   [[ ${PKIO_ROOT-} ]] ||
     die "PKIO_ROOT not set"
   echo "Programs with curated defaults:"
@@ -339,16 +338,15 @@ do-list() {
     [[ -d $d ]] || continue
     echo "  $(basename "$d")"
   done
-}
+)
 
-do-config() {
-  local spec=$1
-  local file
+do-config() (
+  spec=$1
 
   case $spec in
     __project__)
       # --config (no value): project config for all programs
-      local project_dir=$config_home/${base#/}
+      project_dir=$config_home/${base#/}
       [[ -d $project_dir ]] || mkdir -p "$project_dir"
       file=$project_dir/config.yaml
       ;;
@@ -359,13 +357,13 @@ do-config() {
       ;;
     *:g)
       # --config=claude:g: global config for specific program
-      local prog=${spec%:g}
+      prog=${spec%:g}
       [[ -d $config_home/cmd ]] || mkdir -p "$config_home/cmd"
       file=$config_home/cmd/$prog.yaml
       ;;
     *)
       # --config=claude: project config for specific program
-      local project_dir=$config_home/${base#/}
+      project_dir=$config_home/${base#/}
       [[ -d $project_dir ]] || mkdir -p "$project_dir"
       file=$project_dir/$spec.yaml
       ;;
@@ -377,13 +375,13 @@ do-config() {
   fi
 
   run "${EDITOR:-vim}" "$file"
-}
+)
 
-do-stash() {
-  local file=$1
-  local src=$cwd/$file
-  local stash_dir=$config_home/${base#/}/stash
-  local dest=$stash_dir/$file
+do-stash() (
+  file=$1
+  src=$cwd/$file
+  stash_dir=$config_home/${base#/}/stash
+  dest=$stash_dir/$file
 
   [[ -e $src ]] ||
     die "File not found: $file"
@@ -398,11 +396,11 @@ do-stash() {
   mv "$src" "$dest"
   ln -s "$dest" "$src"
   echo "Stashed: $file -> $dest"
-}
+)
 
-do-link() {
-  local spec=$1
-  local stash_dir=$config_home/${base#/}/stash
+do-link() (
+  spec=$1
+  stash_dir=$config_home/${base#/}/stash
 
   if [[ $spec == __all__ ]]; then
     # --link: link all from current project's stash
@@ -412,9 +410,8 @@ do-link() {
 
   elif [[ -d $cwd/$spec ]]; then
     # --link=<dir>: resolve dir and link all from its stash
-    local dir
     dir=$(cd "$cwd/$spec" && pwd -P)
-    local dir_stash=$config_home/${dir#/}/stash
+    dir_stash=$config_home/${dir#/}/stash
     [[ -d $dir_stash ]] ||
       die "No stash directory: $dir_stash"
     link-all-from "$dir_stash"
@@ -423,8 +420,8 @@ do-link() {
     # --link=<file>: link specific file from current project's stash
     [[ -d $stash_dir ]] ||
       die "No stash directory: $stash_dir"
-    local src=$stash_dir/$spec
-    local dest=$cwd/$spec
+    src=$stash_dir/$spec
+    dest=$cwd/$spec
     [[ -e $src ]] ||
       die "Not in stash: $spec"
     [[ ! -e $dest ]] ||
@@ -432,14 +429,13 @@ do-link() {
     ln -s "$src" "$dest"
     echo "Linked: $spec -> $src"
   fi
-}
+)
 
-link-all-from() {
-  local stash_dir=$1
-  local count=0
+link-all-from() (
+  stash_dir=$1
+  count=0
   for src in "$stash_dir"/*; do
     [[ -e $src ]] || continue
-    local name
     name=$(basename "$src")
     if [[ -e $cwd/$name ]]; then
       echo "Skipping (exists): $name"
@@ -452,22 +448,21 @@ link-all-from() {
   if [[ $count -eq 0 ]]; then
     echo "No new files to link"
   fi
-}
+)
 
-do-unlink() {
-  local stash_dir=$config_home/${base#/}/stash
+do-unlink() (
+  stash_dir=$config_home/${base#/}/stash
 
   if [[ ! -d $stash_dir ]]; then
     echo "No pkio stash for: $base"
     return 1
   fi
 
-  local count=0
+  count=0
   for src in "$stash_dir"/*; do
     [[ -e $src ]] || continue
-    local name
     name=$(basename "$src")
-    local link=$cwd/$name
+    link=$cwd/$name
     if [[ -L $link ]] && [[ $(readlink "$link") == "$src" ]]; then
       rm "$link"
       echo "Unlinked: $name"
@@ -477,11 +472,11 @@ do-unlink() {
   if [[ $count -eq 0 ]]; then
     echo "No stash symlinks to remove"
   fi
-}
+)
 
-check-completions() {
-  local marker=$cache_home/completions-loaded
-  local changed=false
+check-completions() (
+  marker=$cache_home/completions-loaded
+  changed=false
   for f in "$share"/complete/*; do
     [[ -e $f ]] || continue
     if [[ $f -nt $marker ]]; then
@@ -494,7 +489,7 @@ check-completions() {
     touch "$marker"
     echo "pkio: Completions have changed. Run: source $root/.rc" >&2
   fi
-}
+)
 
 setup-history() {
   local history_dir=$config_home/${base#/}
@@ -550,11 +545,11 @@ RCEOF
   esac
 }
 
-do-complete() {
-  local shell=$1
-  local ext=sh
+do-complete() (
+  shell=$1
+  ext='sh'
   [[ $shell != fish ]] || ext=fish
-  local file=$PKIO_ROOT/share/complete/$shell.$ext
+  file=$PKIO_ROOT/share/complete/$shell.$ext
   case $shell in
     bash|zsh|fish)
       [[ -e $file ]] ||
@@ -566,10 +561,9 @@ do-complete() {
           "Use: bash, zsh, or fish"
       ;;
   esac
-}
+)
 
-detect-shell() {
-  local parent_shell
+detect-shell() (
   parent_shell=$(ps -o comm= -p "$PPID" 2>/dev/null || true)
   parent_shell=${parent_shell##*/}
   parent_shell=${parent_shell#-}
@@ -577,7 +571,7 @@ detect-shell() {
     bash|zsh|fish) echo "$parent_shell" ;;
     *) echo bash ;;
   esac
-}
+)
 
 get-project-base() (
   if ! common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null); then

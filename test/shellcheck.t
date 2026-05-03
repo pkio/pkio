@@ -5,7 +5,14 @@ source test/init
 +cmd:ok-ver shellcheck 0.11.0 ||
   plan skip-all "Test requires shellcheck 0.11.0 to be installed"
 
-skip=1064,1072,1073,1090,1091,2002,2030,2031,2034,2154,2207,2217
+# 1090 - Can't follow dynamic source path
+# 1091 - Can't open sourced file
+# 2030 - Variable modification local to subshell
+# 2031 - Variable modified in subshell may be lost
+# 2034 - Variable appears unused
+# 2154 - Variable referenced but not assigned
+# 2207 - Array via unquoted command substitution
+skip=1090,1091,2030,2031,2034,2154,2207
 
 while read -r file; do
   [[ -h $file ]] && continue
