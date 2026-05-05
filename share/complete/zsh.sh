@@ -4,6 +4,8 @@
 _pkio() {
   local -a progs flags
   flags=(
+    '--ro=[Add read-only path]:path:_files'
+    '--rw=[Add read-write path]:path:_files'
     '--config[Edit config]:spec:->config'
     '--show-config[Print merged config for a program]'
     '--shell[Start sandboxed subshell]:shell:(bash zsh fish)'

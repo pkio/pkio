@@ -15,7 +15,7 @@ _pkio() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  flags="--config --show-config --stash= --link --unlink --shell --complete --list --update --reset --help"
+  flags="--ro= --rw= --config --show-config --stash= --link --unlink --shell --complete --list --update --reset --help"
 
   if [[ $COMP_CWORD -eq 1 ]]; then
     if [[ $cur == --config=* ]]; then

@@ -117,6 +117,8 @@ parse-args() {
   do_link=
   do_unlink=false
   shell_override=
+  cli_ro=()
+  cli_rw=()
   program=
   program_args=()
 
@@ -179,6 +181,12 @@ parse-args() {
       --unlink)
         do_unlink=true
         return
+        ;;
+      --ro=*)
+        cli_ro+=("${1#--ro=}")
+        ;;
+      --rw=*)
+        cli_rw+=("${1#--rw=}")
         ;;
       --*)
         die "Unknown flag: $1"
@@ -271,6 +279,27 @@ build-config() {
   local project_dir=$config_home/${base#/}
   [[ -d $project_dir ]] || mkdir -p "$project_dir"
 
+  # Level 7: CLI flags (--ro=... --rw=...)
+  if [[ ${#cli_ro[@]} -gt 0 || ${#cli_rw[@]} -gt 0 ]]; then
+    local cli_config=$tmp_dir/cli-config.yaml
+    : > "$cli_config"
+    if [[ ${#cli_rw[@]} -gt 0 ]]; then
+      echo "read-write:" >> "$cli_config"
+      local p
+      for p in "${cli_rw[@]}"; do
+        echo "- $p" >> "$cli_config"
+      done
+    fi
+    if [[ ${#cli_ro[@]} -gt 0 ]]; then
+      echo "read-only:" >> "$cli_config"
+      local p
+      for p in "${cli_ro[@]}"; do
+        echo "- $p" >> "$cli_config"
+      done
+    fi
+    config_files+=("$cli_config")
+  fi
+
   # Generate config.mk from layered configs
   make -f "$root/Makefile" ys >/dev/null
   local ys
@@ -290,6 +319,8 @@ Run any program inside a nono kernel-level sandbox with per-project
 configuration.
 
 Flags:
+  --ro=<path>         Add read-only path (repeatable)
+  --rw=<path>         Add read-write path (repeatable)
   --config[=SPEC]     Edit config in $EDITOR
                         --config          project config (all programs)
                         --config=claude   project config for claude

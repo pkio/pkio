@@ -1,5 +1,7 @@
 # pkio completions for fish
 
+complete -c pkio -l ro -d 'Add read-only path' -r -F
+complete -c pkio -l rw -d 'Add read-write path' -r -F
 complete -c pkio -l config -d 'Edit config' -x
 complete -c pkio -l show-config -d 'Print merged config for a program'
 complete -c pkio -l shell -d 'Start sandboxed subshell' -x -a 'bash zsh fish'
