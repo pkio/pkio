@@ -1,9 +1,8 @@
 # pkio global defaults
 
-files:
-  read-only:
-#   - /etc/passwd
-#   - /etc/group
-  - /etc/profile
-  - /etc/bash.bashrc
-  - /etc/manpath.config
+read-only:
+# - /etc/passwd
+# - /etc/group
+- /etc/profile
+- /etc/bash.bashrc
+- /etc/manpath.config

@@ -8,17 +8,13 @@
 # - perl
 # - python
 
-# files:
-#   read-only:
-#   - ~/.npmrc
-#   - ~/.pip/pip.conf
-#   read-write:
+# read-only:
+# - ~/.npmrc
+# - ~/.pip/pip.conf
+# - ~/.local/lib
 
-# dirs:
-#   read-only:
-#   - ~/.local/lib
-#   read-write:
-#   - node_modules
+# read-write:
+# - node_modules
 
 # net:
 #   domains:
@@ -35,8 +31,7 @@
 #   SOME_VAR: some-value
 
 # path:
-#   prepend:
-#   - /usr/bin
+# - /usr/bin
 
 # makefile: |
 #   CUSTOM-VAR := value

@@ -67,17 +67,13 @@ Every field is optional.
 cmd-args:
 - --some-flag
 
-dirs:
-  read-write:
-  - /tmp
-  read-only:
-  - /proc
+read-write:
+- /tmp
+- /dev/ptmx
 
-files:
-  read-only:
-  - /etc/gitconfig
-  read-write:
-  - /dev/ptmx
+read-only:
+- /proc
+- /etc/gitconfig
 
 net:
   domains:
@@ -92,8 +88,7 @@ env:
   SOME_VAR: value
 
 path:
-  prepend:
-  - /usr/bin
+- /usr/bin
 
 browser: google-chrome
 

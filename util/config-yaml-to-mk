@@ -10,6 +10,8 @@ defn yaml-to-mk(file):
   when fs-e(file):
     data =: file:read:yaml/load
     when data:
+      check-deprecated(data file)
+    when data:
       join "\n\n":
         remove falsey?:
           list:
@@ -21,6 +23,15 @@ defn yaml-to-mk(file):
             mk-env(data)
             mk-cmd-args(data)
             mk-nono-opts(data)
+
+defn check-deprecated(data file):
+  when data.dirs:
+    die: "'$file' uses 'dirs:' - use 'read-write:' and 'read-only:' instead"
+  when data.files:
+    die: "'$file' uses 'files:' - use 'read-write:' and 'read-only:' instead"
+  p =: get(data 'path')
+  when p && p.prepend:
+    die: "'$file' uses 'path: prepend:' - use 'path:' with a list instead"
 
 defn mk-makefile(data):
   data.makefile
@@ -62,8 +73,8 @@ defn mk-makes(data):
 
 defn mk-path(data):
   p =: get(data 'path')
-  when p && p.prepend:
-    DBG: "override PATH := $(p.prepend.join(':')):\\$(PATH)\nexport PATH"
+  when p:
+    DBG: "override PATH := $(p.join(':')):\\$(PATH)\nexport PATH"
 
 defn mk-env(data):
   when data.env:
@@ -79,21 +90,9 @@ defn mk-cmd-args(data):
 
 defn mk-nono-opts(data):
   str:
-    mk-dirs(data)
-    mk-files(data)
+    mk-access(data 'read-write' '--allow' '--allow-file')
+    mk-access(data 'read-only' '--read' '--read-file')
     mk-net(data)
-
-defn mk-dirs(data):
-  when data.dirs:
-    str:
-      mk-flag-list(data.dirs.read-write '--allow')
-      mk-flag-list(data.dirs.read-only '--read')
-
-defn mk-files(data):
-  when data.files:
-    str:
-      mk-flag-list(data.files.read-only '--read-file')
-      mk-flag-list(data.files.read-write '--allow-file')
 
 defn mk-net(data):
   when data.net:
@@ -109,6 +108,35 @@ defn mk-net-ports(ports):
     str:
       mk-flag-list(ports.listen '--listen-port')
       mk-flag-list(ports.open '--open-port')
+
+defn mk-access(data key dir-flag file-flag):
+  paths =: get(data key)
+  when paths:
+    reduce _ '' paths:
+      fn(o path):
+        o +: mk-entry(path-flag(path dir-flag file-flag) path)
+
+defn path-flag(path dir-flag file-flag):
+  path-is-file?(path).if(file-flag dir-flag)
+
+defn path-is-file?(path):
+  s =: str(path)
+  p =: expand-home(s)
+  when-not re-find(/\$/ s):
+    if fs-e(p):
+      not: fs-d(p)
+      else:
+        ensure-path(p s)
+
+defn ensure-path(p s):
+  is-dir =: s.ends?('/')
+  if is-dir:
+    shell: "mkdir -p '$p'"
+    else:
+      parent =: p.replace(/[^\/]+$/)
+      shell: "mkdir -p '$parent'"
+      shell: "touch '$p'"
+  not: is-dir
 
 defn expand-home(path):
   home =: System/getenv('HOME')
