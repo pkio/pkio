@@ -1,5 +1,6 @@
 # pkio completions for fish
 
+complete -c pkio -s C -d 'Change to directory' -r -a '(__fish_complete_directories)'
 complete -c pkio -l ro -d 'Add read-only path' -r -F
 complete -c pkio -l rw -d 'Add read-write path' -r -F
 complete -c pkio -l config -d 'Edit config' -x

@@ -4,6 +4,7 @@
 _pkio() {
   local -a progs flags
   flags=(
+    '-C[Change to directory before doing anything]:dir:_directories'
     '--ro=[Add read-only path]:path:_files'
     '--rw=[Add read-write path]:path:_files'
     '--config[Edit config]:spec:->config'
