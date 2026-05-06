@@ -356,7 +356,7 @@ do-update() (
   [[ ${PKIO_ROOT-} ]] ||
     die "PKIO_ROOT not set"
   set -x
-  git -C "$PKIO_ROOT" pull
+  git -C "$PKIO_ROOT" pull --rebase origin main
   cache=${PKIO_CACHE:-$HOME/.cache/pkio}
   rm -fr "$cache/makes"
   rm -fr "$cache/local"
