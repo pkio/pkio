@@ -18,6 +18,11 @@ main() (
     exit
   fi
 
+  if [[ -n $change_dir ]]; then
+    cd "$change_dir" ||
+      die "Cannot change to directory: $change_dir"
+  fi
+
   if $do_update; then
     do-update
     exit
@@ -104,6 +109,7 @@ main() (
 )
 
 parse-args() {
+  change_dir=
   do_help=false
   do_update=false
   do_reset=false
@@ -124,6 +130,11 @@ parse-args() {
 
   while [[ $# -gt 0 ]]; do
     case $1 in
+      -C)
+        [[ ${2-} ]] || die "-C requires a directory argument"
+        change_dir=$2
+        shift
+        ;;
       --help)
         do_help=true
         return
@@ -315,6 +326,7 @@ Run any program inside a nono kernel-level sandbox with per-project
 configuration.
 
 Flags:
+  -C <dir>            Change to <dir> before doing anything
   --ro=<path>         Add read-only path (repeatable)
   --rw=<path>         Add read-write path (repeatable)
   --config[=SPEC]     Edit config in $EDITOR

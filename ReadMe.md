@@ -27,6 +27,7 @@ per-project overrides combine to produce the final sandbox policy.
 
 ## Options
 
+- `-C DIR` — Change to `DIR` before doing anything.
 - `--ro=PATH` — Add a read-only path (repeatable).
 - `--rw=PATH` — Add a read-write path (repeatable).
 - `--config[=SPEC]` — Edit a config file in `$EDITOR`.

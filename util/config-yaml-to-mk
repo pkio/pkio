@@ -45,7 +45,6 @@ defn mk-browser(data):
   browser =: data.browser
   cond:
     browser == 'google-chrome':: |-
-      # GOOGLE-CHROME := /tmp/pkio-$(shell id -u)/google-chrome
       GOOGLE-CHROME := /tmp/claude-$(shell id -u)/google-chrome
       _ := \
       $(shell \
