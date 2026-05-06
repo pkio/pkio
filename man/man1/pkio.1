@@ -28,16 +28,18 @@ per-project overrides combine to produce the final sandbox policy.
 
 .SH Options
 .IP \(bu 2
+\fB--ro=PATH\fR — Add a read-only path (repeatable).
+.IP \(bu 2
+\fB--rw=PATH\fR — Add a read-write path (repeatable).
+.IP \(bu 2
 \fB--config[=SPEC]\fR — Edit a config file in \fB$EDITOR\fR\&.
 .RS
 .IP \(bu 2
-\fB--config\fR — project config (all programs)
+\fB--config\fR — project config
 .IP \(bu 2
-\fB--config=claude\fR — project config for claude
+\fB--config=claude\fR — global config for claude
 .IP \(bu 2
-\fB--config=claude:g\fR — global config for claude
-.IP \(bu 2
-\fB--config=pkio\fR — global config (all programs)
+\fB--config=*\fR — global config (all programs)
 .RE
 .IP \(bu 2
 \fB--show-config\fR — Print the merged config for a program.
@@ -73,8 +75,8 @@ l l l .
 2	\fB$PKIO_ROOT/etc/cmd/<prog>/config.yaml\fR	shipped program defaults
 3	\fB~/.config/pkio/config.yaml\fR	user global
 4	\fB~/.config/pkio/cmd/<prog>.yaml\fR	user global per-program
-5	\fB~/.config/pkio/<project-path>/config.yaml\fR	per-project
-6	\fB~/.config/pkio/<project-path>/<prog>.yaml\fR	per-project per-program
+5	\fB~/.config/pkio/<project>/config.yaml\fR	per-project
+6	\fB~/.config/pkio/<project>/config.yaml\fR \fBcmd:<prog>\fR	per-project per-program
 .TE
 
 .SS Config Schema
@@ -106,8 +108,7 @@ env:
   SOME_VAR: value
 
 path:
-  prepend:
-  - /usr/bin
+- /usr/bin
 
 browser: google-chrome
 
@@ -117,7 +118,18 @@ makes:
 
 makefile: |
   CUSTOM-VAR := value
+
+cmd:
+  claude:
+    read-only:
+    - ~/.special/config
 .EE
+
+.PP
+The \fBcmd:\fR key allows per-program overrides within a single config
+file.
+This is most useful in project configs where you want different
+sandbox rules for different programs.
 
 .SH Installation
 Clone the repository and source the shell init file:
@@ -146,7 +158,14 @@ pkio tmate
 .EE
 
 .PP
-Edit the project-specific config for claude:
+Edit the project config:
+
+.EX
+pkio --config
+.EE
+
+.PP
+Edit the global config for claude:
 
 .EX
 pkio --config=claude

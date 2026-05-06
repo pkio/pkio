@@ -267,12 +267,8 @@ build-config() {
   f=$config_home/cmd/$program.yaml
   [[ ! -e $f ]] || config_files+=("$f")
 
-  # Level 5: per-project (all programs)
+  # Level 5: per-project (all programs + cmd:<program> section)
   f=$config_home/${base#/}/config.yaml
-  [[ ! -e $f ]] || config_files+=("$f")
-
-  # Level 6: per-project per-program
-  f=$config_home/${base#/}/$program.yaml
   [[ ! -e $f ]] || config_files+=("$f")
 
   # Ensure project config dir exists
@@ -306,7 +302,7 @@ build-config() {
   ys=$(make -f "$root/Makefile" ys)
   export PKIO_CONFIG_MK=$tmp_dir/config.mk
   "$ys" "$root/util/config-yaml-to-mk" \
-    "${config_files[@]}" > "$PKIO_CONFIG_MK"
+    "$program" "${config_files[@]}" > "$PKIO_CONFIG_MK"
 }
 
 do-help() (
@@ -322,10 +318,9 @@ Flags:
   --ro=<path>         Add read-only path (repeatable)
   --rw=<path>         Add read-write path (repeatable)
   --config[=SPEC]     Edit config in $EDITOR
-                        --config          project config (all programs)
-                        --config=claude   project config for claude
-                        --config=claude:g global config for claude
-                        --config=pkio     global config (all programs)
+                        --config          project config
+                        --config=claude   global config for claude
+                        --config=*        global config (all programs)
   --show-config       Print merged config for a program
   --shell[=SHELL]     Start a sandboxed subshell
   --complete=SHELL    Output tab completion (bash, zsh, fish)
@@ -376,27 +371,20 @@ do-config() (
 
   case $spec in
     __project__)
-      # --config (no value): project config for all programs
+      # --config (no value): project config
       project_dir=$config_home/${base#/}
       [[ -d $project_dir ]] || mkdir -p "$project_dir"
       file=$project_dir/config.yaml
       ;;
-    pkio)
-      # --config=pkio: global config for all programs
+    '*')
+      # --config=*: global config for all programs
       [[ -d $config_home ]] || mkdir -p "$config_home"
       file=$config_home/config.yaml
       ;;
-    *:g)
-      # --config=claude:g: global config for specific program
-      prog=${spec%:g}
-      [[ -d $config_home/cmd ]] || mkdir -p "$config_home/cmd"
-      file=$config_home/cmd/$prog.yaml
-      ;;
     *)
-      # --config=claude: project config for specific program
-      project_dir=$config_home/${base#/}
-      [[ -d $project_dir ]] || mkdir -p "$project_dir"
-      file=$project_dir/$spec.yaml
+      # --config=claude: global config for specific program
+      [[ -d $config_home/cmd ]] || mkdir -p "$config_home/cmd"
+      file=$config_home/cmd/$spec.yaml
       ;;
   esac
 

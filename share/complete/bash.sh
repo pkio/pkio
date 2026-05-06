@@ -21,12 +21,11 @@ _pkio() {
     if [[ $cur == --config=* ]]; then
       # Complete program names after --config=
       local prefix="${cur%%=*}="
-      local progs=""
+      local progs="${prefix}*"
       if [[ -n ${PKIO_ROOT-} ]]; then
         for d in "$PKIO_ROOT"/etc/cmd/*/; do
-          [[ -d $d ]] && progs="$progs ${prefix}$(basename "$d") ${prefix}$(basename "$d"):g"
+          [[ -d $d ]] && progs="$progs ${prefix}$(basename "$d")"
         done
-        progs="$progs ${prefix}:g"
       fi
       COMPREPLY=( $(compgen -W "$progs" -- "$cur") )
     elif [[ $cur == --complete=* ]]; then

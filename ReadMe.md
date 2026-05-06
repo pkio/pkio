@@ -30,10 +30,9 @@ per-project overrides combine to produce the final sandbox policy.
 - `--ro=PATH` — Add a read-only path (repeatable).
 - `--rw=PATH` — Add a read-write path (repeatable).
 - `--config[=SPEC]` — Edit a config file in `$EDITOR`.
-  - `--config` — project config (all programs)
-  - `--config=claude` — project config for claude
-  - `--config=claude:g` — global config for claude
-  - `--config=pkio` — global config (all programs)
+  - `--config` — project config
+  - `--config=claude` — global config for claude
+  - `--config=*` — global config (all programs)
 - `--show-config` — Print the merged config for a program.
 - `--shell[=SHELL]` — Start a sandboxed subshell.
 - `--complete=SHELL` — Output tab completion code (bash, zsh, fish).
@@ -57,8 +56,8 @@ earlier):
 | 2 | `$PKIO_ROOT/etc/cmd/<prog>/config.yaml` | shipped program defaults |
 | 3 | `~/.config/pkio/config.yaml` | user global |
 | 4 | `~/.config/pkio/cmd/<prog>.yaml` | user global per-program |
-| 5 | `~/.config/pkio/<project-path>/config.yaml` | per-project |
-| 6 | `~/.config/pkio/<project-path>/<prog>.yaml` | per-project per-program |
+| 5 | `~/.config/pkio/<project>/config.yaml` | per-project |
+| 6 | `~/.config/pkio/<project>/config.yaml` `cmd:<prog>` | per-project per-program |
 
 ### Config Schema
 
@@ -100,7 +99,17 @@ makes:
 
 makefile: |
   CUSTOM-VAR := value
+
+cmd:
+  claude:
+    read-only:
+    - ~/.special/config
 ```
+
+The `cmd:` key allows per-program overrides within a single config
+file.
+This is most useful in project configs where you want different
+sandbox rules for different programs.
 
 ## Installation
 
@@ -128,7 +137,13 @@ Run tmate in a sandbox:
 pkio tmate
 ```
 
-Edit the project-specific config for claude:
+Edit the project config:
+
+```bash
+pkio --config
+```
+
+Edit the global config for claude:
 
 ```bash
 pkio --config=claude

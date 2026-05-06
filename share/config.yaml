@@ -35,3 +35,8 @@
 
 # makefile: |
 #   CUSTOM-VAR := value
+
+# cmd:
+#   claude:
+#     read-only:
+#     - ~/.special/config

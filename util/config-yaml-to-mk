@@ -1,28 +1,33 @@
 #!/usr/bin/env ys-0
 
-defn main(*yaml-files):
+defn main(program *yaml-files):
   say:
     join "\n\n":
       remove falsey?:
-        map yaml-to-mk: yaml-files
+        map \(yaml-to-mk(program _)): yaml-files
 
-defn yaml-to-mk(file):
+defn yaml-to-mk(program file):
   when fs-e(file):
     data =: file:read:yaml/load
     when data:
       check-deprecated(data file)
     when data:
+      cmd-data =: get-in(data ['cmd' program])
+      parts =: data-to-mk(data)
+      all =: parts.concat(data-to-mk(cmd-data || {}))
       join "\n\n":
-        remove falsey?:
-          list:
-            mk-makefile(data)
-            mk-browser(data)
-            mk-browser-deps(data)
-            mk-makes(data)
-            mk-path(data)
-            mk-env(data)
-            mk-cmd-args(data)
-            mk-nono-opts(data)
+        remove falsey?: all
+
+defn data-to-mk(data):
+  list:
+    mk-makefile(data)
+    mk-browser(data)
+    mk-browser-deps(data)
+    mk-makes(data)
+    mk-path(data)
+    mk-env(data)
+    mk-cmd-args(data)
+    mk-nono-opts(data)
 
 defn check-deprecated(data file):
   when data.dirs:
