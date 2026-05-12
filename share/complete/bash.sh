@@ -33,8 +33,21 @@ _pkio() {
     esac
   done
 
-  # After the program, no completions (args are program-specific)
+  # After the program, delegate to that program's own completion
   if $has_program; then
+    if ! declare -F _command_offset >/dev/null 2>&1; then
+      # bash-completion not loaded yet; try to load it
+      if [[ -r /usr/share/bash-completion/bash_completion ]]; then
+        source /usr/share/bash-completion/bash_completion
+      elif [[ -r /etc/bash_completion ]]; then
+        source /etc/bash_completion
+      fi
+    fi
+    if declare -F _command_offset >/dev/null 2>&1; then
+      _command_offset $i
+    else
+      COMPREPLY=( $(compgen -f -- "$cur") )
+    fi
     return
   fi
 

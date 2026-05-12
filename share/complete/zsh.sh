@@ -29,7 +29,7 @@ _pkio() {
 
   _arguments -s \
     '1:command:->cmd' \
-    '*:args:->args'
+    '*::arg:->args'
 
   case $state in
     cmd)
@@ -37,6 +37,10 @@ _pkio() {
         'flags:flag:_describe "flag" flags' \
         'programs:program:compadd -a progs' \
         'commands:command:_command_names -e'
+      ;;
+    args)
+      # Delegate to the program's own completion
+      _normal
       ;;
   esac
 }
