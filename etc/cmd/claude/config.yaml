@@ -1,13 +1,21 @@
+--- !ys-0
+
+config-dir =:: ~/.config/pkio/cache/claude
 # pkio config for claude
 
+--- !ys:
 cmd-args:
 - --dangerously-skip-permissions
 
+env:
+  CLAUDE_CODE_DISABLE_TERMINAL_TITLE: 1
+  CLAUDE_CONFIG_DIR:: config-dir
+
 read-write:
+- ! config-dir + '/'
 - /tmp
 - /tmp/claude-$(shell id -u)
 - ~/.cache/makes
-  # - /tmp/.com.google.Chrome.*
 
 read-only:
 - /proc
@@ -17,6 +25,3 @@ read-only:
 - /usr/include
 - ~/.config/gh
 - /etc/gitconfig
-
-env:
-  CLAUDE_CODE_DISABLE_TERMINAL_TITLE: 1
