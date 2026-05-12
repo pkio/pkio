@@ -10,6 +10,11 @@ PKIO-NONO-OPTS += \
 
 CLAUDE-NONO-DEPS ?= $(GH)
 
+# Make CLAUDE_CONFIG_DIR visible to the pre-sandbox auth check below.
+# The sandbox itself picks the same value up from config.yaml's env:
+# block, but that only fires after pkio-setup completes.
+export CLAUDE_CONFIG_DIR ?= $(HOME)/.config/pkio/cache/claude
+
 CLAUDE-READY := $(LOCAL-CACHE)/claude-ready
 
 CLAUDE-SYSTEM := $(shell which claude 2>/dev/null)
