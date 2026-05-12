@@ -282,6 +282,10 @@ build-config() {
   f=$config_home/${base#/}/config.yaml
   [[ ! -e $f ]] || config_files+=("$f")
 
+  # Level 6: in-repo project config (checked into the repo)
+  f=$base/pkio.yaml
+  [[ ! -e $f ]] || config_files+=("$f")
+
   # Ensure project config dir exists
   local project_dir=$config_home/${base#/}
   [[ -d $project_dir ]] || mkdir -p "$project_dir"
