@@ -1,0 +1,16 @@
+# pkio config for code (VS Code)
+
+read-write:
+- /tmp
+- ~/.config/Code
+- ~/.vscode
+- /var/lib/snapd
+
+read-only:
+- /proc
+- /usr/bin
+- /usr/local/bin
+- /usr/libexec
+- /snap
+- ~/.ssh
+- /etc/gitconfig
