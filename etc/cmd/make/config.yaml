@@ -1,0 +1,4 @@
+# pkio config for make
+#
+# Read-write on cwd is granted in makes/make.mk via PKIO-NONO-OPTS
+# (the YAML schema has no way to express $PWD).
