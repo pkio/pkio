@@ -8,7 +8,7 @@ defn main(program *yaml-files):
 
 defn yaml-to-mk(program file):
   when fs-e(file):
-    data =: file:read:yaml/load
+    data =: file:load
     when data:
       check-deprecated(data file)
     when data:
