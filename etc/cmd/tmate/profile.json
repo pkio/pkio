@@ -3,8 +3,8 @@
     "name": "tmate",
     "description": "Profile for tmate terminal sharing"
   },
-  "security": {
-    "groups": []
+  "groups": {
+    "include": []
   },
   "workdir": {
     "access": "readwrite"
