@@ -8,7 +8,12 @@ M := .cache/makes
 export MAKES_LOCAL_DIR := .cache/local
 endif
 
-$(shell [ -d $M ] || (git clone -q https://github.com/makeplus/makes $M))
+R := https://github.com/makeplus/makes
+C := b30289189526273c1a8c969ea1086ee6d1efaa29
+
+$(shell [ -d '$M' ] || git clone -q $R '$M')
+$(shell cd '$M' && [ "$$(git rev-parse HEAD)" = '$C' ] || \
+  { git fetch -q origin && git checkout -q '$C'; })
 
 include $M/init.mk
 include $M/nono.mk
