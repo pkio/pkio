@@ -453,12 +453,17 @@ do-link() (
 
   else
     # --link=<file>: link specific file from current project's stash
-    [[ -d $stash_dir ]] ||
-      die "No stash directory: $stash_dir"
-    src=$stash_dir/$spec
     dest=$cwd/$spec
+    if [[ -f $dest && ! -L $dest ]]; then
+      did_you_mean="Did you mean: pkio --stash=$spec"
+    else
+      did_you_mean=
+    fi
+    [[ -d $stash_dir ]] ||
+      die "No stash directory: $stash_dir" ${did_you_mean:+"$did_you_mean"}
+    src=$stash_dir/$spec
     [[ -e $src ]] ||
-      die "Not in stash: $spec"
+      die "Not in stash: $spec" ${did_you_mean:+"$did_you_mean"}
     [[ ! -e $dest ]] ||
       die "Already exists: $dest"
     ln -s "$src" "$dest"

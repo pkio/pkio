@@ -95,6 +95,12 @@ isnt "$rc" 0 \
 like "$output" "No pkio stash for:" \
   "--unlink with no stash shows friendly message"
 
+# --link=<file> suggests --stash when file exists in cwd but not stashed
+echo "hello" > "$no_stash_dir/CLAUDE.md"
+output=$("$pkio" --link=CLAUDE.md 2>&1) || true
+like "$output" "Did you mean: pkio --stash=CLAUDE.md" \
+  "--link=<file> with no stash suggests --stash"
+
 
 # --stash errors
 cd "$project_dir" || exit
