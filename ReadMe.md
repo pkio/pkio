@@ -69,6 +69,8 @@ Every field is optional.
 cmd-args:
 - --some-flag
 
+profile: codex
+
 read-write:
 - /tmp
 - /dev/ptmx
@@ -111,6 +113,10 @@ The `cmd:` key allows per-program overrides within a single config
 file.
 This is most useful in project configs where you want different
 sandbox rules for different programs.
+
+The `profile:` key selects a nono base profile (e.g. `codex`,
+`claude-code`) and is passed through as `nono --profile <name>`.
+It must be a single string, not a list.
 
 ## Installation
 

@@ -12,6 +12,8 @@ defn yaml-to-mk(program file):
     when data:
       check-deprecated(data file)
     when data:
+      check-profile(data file)
+    when data:
       cmd-data =: get-in(data ['cmd' program])
       parts =: data-to-mk(data)
       all =: parts.concat(data-to-mk(cmd-data || {}))
@@ -37,6 +39,11 @@ defn check-deprecated(data file):
   p =: get(data 'path')
   when p && p.prepend:
     die: "'$file' uses 'path: prepend:' - use 'path:' with a list instead"
+
+defn check-profile(data file):
+  p =: get(data 'profile')
+  when p && vector?(p):
+    die: "'$file' uses 'profile:' as a list - it must be a string"
 
 defn mk-makefile(data):
   data.makefile
@@ -97,6 +104,12 @@ defn mk-nono-opts(data):
     mk-access(data 'read-write' '--allow' '--allow-file')
     mk-access(data 'read-only' '--read' '--read-file')
     mk-net(data)
+    mk-profile(data)
+
+defn mk-profile(data):
+  p =: get(data 'profile')
+  when p:
+    mk-entry('--profile' p)
 
 defn mk-net(data):
   when data.net:

@@ -1,5 +1,7 @@
 # pkio config for codex (OpenAI Codex CLI)
 
+profile: codex
+
 cmd-args:
 - --dangerously-bypass-approvals-and-sandbox
 
