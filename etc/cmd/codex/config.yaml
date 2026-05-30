@@ -1,0 +1,18 @@
+# pkio config for codex (OpenAI Codex CLI)
+
+cmd-args:
+- --dangerously-bypass-approvals-and-sandbox
+
+read-write:
+- ~/.codex
+- /tmp
+- ~/.cache/makes
+
+read-only:
+- /proc
+- /usr/bin
+- /usr/local/bin
+- /usr/libexec
+- /usr/include
+- ~/.config/gh
+- /etc/gitconfig
