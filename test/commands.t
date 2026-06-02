@@ -7,10 +7,12 @@ pkio=$ROOT/bin/pkio
 # Set up a temp directory for test isolation
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
+mkdir -p "$tmp/home"
 
 export PKIO_ROOT=$ROOT
 export PKIO_CONFIG=$tmp/config
 export PKIO_CACHE=$tmp/cache
+export HOME=$tmp/home
 unset NONO_CAP_FILE
 
 save_dir=$PWD
@@ -32,6 +34,15 @@ output=$("$pkio" --list)
 ok $? "--list exits successfully"
 like "$output" "claude" \
   "--list includes claude"
+like "$output" "opencode" \
+  "--list includes opencode"
+
+
+# --show-config includes opencode defaults
+output=$("$pkio" --show-config opencode)
+ok $? "--show-config opencode exits successfully"
+like "$output" "--profile opencode" \
+  "--show-config opencode includes opencode profile"
 
 
 # --stash / --link / --unlink cycle
