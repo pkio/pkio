@@ -20,3 +20,9 @@ read-only:
 - /usr/include
 - ~/.config/gh
 - /etc/gitconfig
+
+# OAuth callback port for /connect codex (redirect to http://localhost:1455)
+net:
+  ports:
+    listen:
+    - 1455
