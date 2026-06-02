@@ -88,10 +88,10 @@ main() (
   fi
 
   # Build deps and run program-specific setup
-  make -f "$root/Makefile" pkio-setup
+  make --no-print-directory -f "$root/Makefile" pkio-setup
 
   # Get nono path, opts, and cmd-args from Make
-  env_output=$(make -f "$root/Makefile" pkio-env)
+  env_output=$(make --no-print-directory -f "$root/Makefile" pkio-env)
   eval "$env_output"
 
   # Clean up shell rcfile on exit
@@ -312,9 +312,9 @@ build-config() {
   fi
 
   # Generate config.mk from layered configs
-  make -f "$root/Makefile" ys >/dev/null
+  make --no-print-directory -f "$root/Makefile" ys >/dev/null
   local ys
-  ys=$(make -f "$root/Makefile" ys)
+  ys=$(make --no-print-directory -f "$root/Makefile" ys)
   export PKIO_CONFIG_MK=$tmp_dir/config.mk
   "$ys" "$root/util/config-yaml-to-mk" \
     "$program" "${config_files[@]}" > "$PKIO_CONFIG_MK"
