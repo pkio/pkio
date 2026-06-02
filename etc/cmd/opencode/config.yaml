@@ -1,0 +1,22 @@
+# pkio config for opencode
+
+profile: opencode
+
+read-write:
+- ~/.opencode/
+- ~/.config/opencode/
+- ~/.cache/opencode/
+- ~/.local/share/opencode/
+- ~/.local/share/opentui/
+- ~/.local/state/opencode/
+- /tmp
+- ~/.cache/makes/
+
+read-only:
+- /proc
+- /usr/bin
+- /usr/local/bin
+- /usr/libexec
+- /usr/include
+- ~/.config/gh
+- /etc/gitconfig
