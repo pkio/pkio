@@ -44,6 +44,12 @@ ok $? "--show-config opencode exits successfully"
 like "$output" "--profile opencode" \
   "--show-config opencode includes opencode profile"
 
+# --show-config includes codex rg dependency
+output=$("$pkio" --show-config codex)
+ok $? "--show-config codex exits successfully"
+like "$output" "rg.mk" \
+  "--show-config codex includes rg makes dependency"
+
 
 # --stash / --link / --unlink cycle
 project_dir=$tmp/project

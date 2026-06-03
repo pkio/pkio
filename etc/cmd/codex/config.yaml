@@ -4,6 +4,10 @@ profile: codex
 
 cmd-args:
 - --dangerously-bypass-approvals-and-sandbox
+- -c 'tui.terminal_title=[]'
+
+makes:
+- rg
 
 read-write:
 - ~/.codex
