@@ -4,10 +4,14 @@ profile: codex
 
 cmd-args:
 - --dangerously-bypass-approvals-and-sandbox
-- -c 'tui.terminal_title=[]'
+- -c
+- tui.terminal_title=[]
+- -c
+- project_doc_fallback_filenames=[\"CLAUDE.md\"]
 
 makes:
 - rg
+- node
 
 read-write:
 - ~/.codex
