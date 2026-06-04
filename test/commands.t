@@ -49,6 +49,23 @@ output=$("$pkio" --show-config codex)
 ok $? "--show-config codex exits successfully"
 like "$output" "rg.mk" \
   "--show-config codex includes rg makes dependency"
+printf '%s\n' "$output" > "$tmp/codex-config.mk"
+output=$(PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+ok $? "pkio-env codex exits successfully"
+like "$output" 'projects\.".*"\.trust_level="trusted"' \
+  "pkio-env codex trusts current project for this run"
+mkdir -p "$HOME/.codex"
+cat > "$HOME/.codex/config.toml" <<EOF
+[projects."$save_dir"]
+trust_level = "untrusted"
+EOF
+output=$(PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+  PKIO_BASE=$save_dir make --no-print-directory -f "$ROOT/Makefile" \
+  _codex-trust-project)
+ok $? "codex project trust setup exits successfully"
+like "$(cat "$HOME/.codex/config.toml")" 'trust_level = "trusted"' \
+  "codex project trust setup persists trusted project"
 
 # claude uses nono wrap so nono does not inject its URL-opening helper.
 output=$("$pkio" --show-config claude)

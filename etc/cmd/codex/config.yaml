@@ -14,7 +14,7 @@ makes:
 - node
 
 read-write:
-- ~/.codex
+- ~/.codex/
 - /tmp
 - ~/.cache/makes
 
