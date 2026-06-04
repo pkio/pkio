@@ -52,17 +52,28 @@ defn mk-browser(data):
   browser =: data.browser
   cond:
     browser == 'google-chrome':: |-
-      GOOGLE-CHROME := /tmp/claude-$(shell id -u)/google-chrome
+      PKIO-BROWSER-DIR := /tmp/claude-$(shell id -u)
+      BROWSER-SHIM := $(PKIO-BROWSER-DIR)/browser-shim
+      GOOGLE-CHROME := $(PKIO-BROWSER-DIR)/google-chrome
+      XDG-OPEN := $(PKIO-BROWSER-DIR)/xdg-open
       _ := \
       $(shell \
-        mkdir -p $(dir $(GOOGLE-CHROME)) && \
+        mkdir -p $(PKIO-BROWSER-DIR) && \
         ( \
           echo '#!/bin/bash'; \
-          echo 'exec /usr/bin/google-chrome --no-sandbox --disable-dev-shm-usage "$$@"' \
-        ) > $(GOOGLE-CHROME) \
-          && chmod +x $(GOOGLE-CHROME) \
+          echo 'set -u'; \
+          echo 'log=/tmp/claude-$$(id -u)/browser.log'; \
+          echo 'printf "%s %s %q\n" "$$(date +%FT%T%z)" "$$(basename "$$0")" "$$*" >> "$$log"'; \
+          echo 'exec /usr/bin/google-chrome --no-sandbox --disable-dev-shm-usage "$$@" >>"$$log" 2>&1' \
+        ) > $(BROWSER-SHIM) \
+          && chmod +x $(BROWSER-SHIM) \
+          && rm -f $(GOOGLE-CHROME) $(XDG-OPEN) \
+          && ln -sf browser-shim $(GOOGLE-CHROME) \
+          && \
+        ln -sf browser-shim $(XDG-OPEN) \
       )
-      PKIO-EXPORT-ENV += BROWSER=$(GOOGLE-CHROME)
+      PKIO-UNSET-ENV += BROWSER
+      PKIO-EXPORT-ENV += PATH=$(PKIO-BROWSER-DIR):$(PATH)
 
 defn mk-browser-deps(data):
   when (data.browser == 'google-chrome') && linux?():
@@ -70,8 +81,12 @@ defn mk-browser-deps(data):
       vector:
         mk-entry('--read' '/opt/google/chrome')
         mk-entry('--read' '/dev/dri')
+        mk-entry('--allow' '/run/user/$(shell id -u)')
+        mk-entry('--allow-unix-socket' '/run/user/$(shell id -u)/bus')
+        mk-entry('--allow-unix-socket-dir' '/run/user/$(shell id -u)')
         mk-entry('--allow' '/tmp')
         mk-entry('--allow' '~/.config/google-chrome')
+        mk-entry('--allow' '~/.local/share/applications')
 
 defn linux?():
   System/getProperty("os.name") == 'Linux'

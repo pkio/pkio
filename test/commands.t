@@ -50,6 +50,30 @@ ok $? "--show-config codex exits successfully"
 like "$output" "rg.mk" \
   "--show-config codex includes rg makes dependency"
 
+# claude uses nono wrap so nono does not inject its URL-opening helper.
+output=$("$pkio" --show-config claude)
+ok $? "--show-config claude exits successfully"
+printf '%s\n' "$output" > "$tmp/claude-config.mk"
+output=$(PKIO_PROGRAM=claude PKIO_CONFIG_MK=$tmp/claude-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+ok $? "pkio-env claude exits successfully"
+like "$output" "PKIO_NONO_CMD='wrap'" \
+  "pkio-env claude uses nono wrap"
+like "$output" "--profile claude-code" \
+  "pkio-env claude uses claude-code profile"
+
+# browser config exports browser opener wrappers
+echo "browser: google-chrome" > "$PKIO_CONFIG/config.yaml"
+output=$("$pkio" --show-config claude)
+ok $? "--show-config claude with browser exits successfully"
+unlike "$output" 'BROWSER=' \
+  "--show-config claude does not export BROWSER"
+like "$output" 'PKIO-UNSET-ENV \+= BROWSER' \
+  "--show-config claude unsets inherited BROWSER"
+like "$output" 'PATH=\$\(PKIO-BROWSER-DIR\):\$\(PATH\)' \
+  "--show-config claude prepends browser wrapper path"
+rm -f "$PKIO_CONFIG/config.yaml"
+
 
 # --stash / --link / --unlink cycle
 project_dir=$tmp/project

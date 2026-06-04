@@ -93,6 +93,7 @@ main() (
   # Get nono path, opts, and cmd-args from Make
   env_output=$(make --no-print-directory -f "$root/Makefile" pkio-env)
   eval "$env_output"
+  PKIO_NONO_CMD=${PKIO_NONO_CMD:-run}
 
   # Clean up shell rcfile on exit
   if [[ -n ${shell_rcfile-} ]]; then
@@ -103,7 +104,7 @@ main() (
   # shellcheck disable=2086
   (
     set -x
-    $PKIO_NONO run $PKIO_NONO_OPTS -- \
+    $PKIO_NONO "$PKIO_NONO_CMD" $PKIO_NONO_OPTS -- \
       "$program" $PKIO_CMD_ARGS "${program_args[@]}"
   )
 )

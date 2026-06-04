@@ -49,8 +49,10 @@ MANPAGE-OUT := $(PKIO_ROOT)/man/man1/pkio.1
 
 pkio-env: $(NONO)
 	@echo "PKIO_NONO=$(NONO)"
+	@echo "PKIO_NONO_CMD='$(or $(PKIO-NONO-CMD),run)'"
 	@echo "PKIO_NONO_OPTS='$(PKIO-NONO-OPTS)'"
 	@echo "PKIO_CMD_ARGS='$(PKIO-CMD-ARGS)'"
+	@$(foreach v,$(PKIO-UNSET-ENV),echo "unset $v";)
 	@$(foreach v,$(PKIO-EXPORT-ENV),echo "export $v";)
 
 ys: $(YS)

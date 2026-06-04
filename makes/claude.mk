@@ -8,6 +8,8 @@ include $(MAKES)/jq.mk
 PKIO-NONO-OPTS += \
   --profile claude-code \
 
+PKIO-NONO-CMD := wrap
+
 CLAUDE-NONO-DEPS ?= $(GH)
 
 # Make CLAUDE_CONFIG_DIR visible to the pre-sandbox auth check below.
