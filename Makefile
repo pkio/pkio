@@ -9,7 +9,7 @@ export MAKES_LOCAL_DIR := .cache/local
 endif
 
 R := https://github.com/makeplus/makes
-C := 8f981a18a57c40feba1fdfc9ad5b3c22f0a016f3
+C := a122d34612825bf4f35d8f8606904dd80403936b
 
 $(shell [ -d '$M' ] || git clone -q $R '$M')
 $(shell cd '$M' && [ "$$(git rev-parse HEAD)" = '$C' ] || \
