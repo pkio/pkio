@@ -26,3 +26,4 @@ read-only:
 - /usr/include
 - ~/.config/gh
 - /etc/gitconfig
+- /etc/magic
