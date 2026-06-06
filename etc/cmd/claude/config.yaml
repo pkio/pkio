@@ -4,6 +4,8 @@ config-dir =:: ~/.config/pkio/cache/claude
 # pkio config for claude
 
 --- !ys:
+browser: google-chrome
+
 cmd-args:
 - --dangerously-skip-permissions
 

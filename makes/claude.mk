@@ -6,7 +6,7 @@ include $(MAKES)/gh.mk
 include $(MAKES)/jq.mk
 
 PKIO-NONO-OPTS += \
-  --profile claude-code \
+  --profile $(PKIO_ROOT)/etc/cmd/claude/profile.json \
 
 PKIO-NONO-CMD := wrap
 

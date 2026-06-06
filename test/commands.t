@@ -76,20 +76,24 @@ output=$(PKIO_PROGRAM=claude PKIO_CONFIG_MK=$tmp/claude-config.mk \
 ok $? "pkio-env claude exits successfully"
 like "$output" "PKIO_NONO_CMD='wrap'" \
   "pkio-env claude uses nono wrap"
-like "$output" "--profile claude-code" \
-  "pkio-env claude uses claude-code profile"
+like "$output" "--profile $ROOT/etc/cmd/claude/profile.json" \
+  "pkio-env claude uses pkio claude profile"
 
-# browser config exports browser opener wrappers
-echo "browser: google-chrome" > "$PKIO_CONFIG/config.yaml"
+# claude browser defaults export browser opener wrappers
 output=$("$pkio" --show-config claude)
-ok $? "--show-config claude with browser exits successfully"
+ok $? "--show-config claude browser defaults exits successfully"
 unlike "$output" 'BROWSER=' \
   "--show-config claude does not export BROWSER"
 like "$output" 'PKIO-UNSET-ENV \+= BROWSER' \
   "--show-config claude unsets inherited BROWSER"
 like "$output" 'PATH=\$\(PKIO-BROWSER-DIR\):\$\(PATH\)' \
   "--show-config claude prepends browser wrapper path"
-rm -f "$PKIO_CONFIG/config.yaml"
+like "$output" 'BROWSER-OPENERS := .*xdg-open.*sensible-browser.*open' \
+  "--show-config claude creates common browser opener shims"
+like "$output" '--allow-unix-socket-dir /tmp/\.X11-unix' \
+  "--show-config claude allows X11 socket access"
+like "$output" '--read-file /run/user/\$\(shell id -u\)/gdm/Xauthority' \
+  "--show-config claude allows GDM Xauthority access"
 
 
 # --stash / --link / --unlink cycle

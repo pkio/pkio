@@ -1,0 +1,11 @@
+{
+  "$schema": "https://nono.sh/schemas/nono-profile.schema.json",
+  "extends": "claude-code",
+  "meta": {
+    "name": "pkio-claude",
+    "description": "Claude Code profile for pkio"
+  },
+  "security": {
+    "ipc_mode": "full"
+  }
+}

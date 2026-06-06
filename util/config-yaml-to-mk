@@ -54,8 +54,8 @@ defn mk-browser(data):
     browser == 'google-chrome':: |-
       PKIO-BROWSER-DIR := /tmp/claude-$(shell id -u)
       BROWSER-SHIM := $(PKIO-BROWSER-DIR)/browser-shim
-      GOOGLE-CHROME := $(PKIO-BROWSER-DIR)/google-chrome
-      XDG-OPEN := $(PKIO-BROWSER-DIR)/xdg-open
+      BROWSER-OPENERS := google-chrome google-chrome-stable xdg-open sensible-browser x-www-browser www-browser gnome-open gio open
+      STALE-CLIPBOARD-SHIMS := xclip xsel
       _ := \
       $(shell \
         mkdir -p $(PKIO-BROWSER-DIR) && \
@@ -67,10 +67,11 @@ defn mk-browser(data):
           echo 'exec /usr/bin/google-chrome --no-sandbox --disable-dev-shm-usage "$$@" >>"$$log" 2>&1' \
         ) > $(BROWSER-SHIM) \
           && chmod +x $(BROWSER-SHIM) \
-          && rm -f $(GOOGLE-CHROME) $(XDG-OPEN) \
-          && ln -sf browser-shim $(GOOGLE-CHROME) \
-          && \
-        ln -sf browser-shim $(XDG-OPEN) \
+          && rm -f $(addprefix $(PKIO-BROWSER-DIR)/,$(BROWSER-OPENERS)) \
+          && rm -f $(addprefix $(PKIO-BROWSER-DIR)/,$(STALE-CLIPBOARD-SHIMS)) \
+          && for opener in $(BROWSER-OPENERS); do \
+            ln -sf browser-shim $(PKIO-BROWSER-DIR)/$$opener || exit 1; \
+          done \
       )
       PKIO-UNSET-ENV += BROWSER
       PKIO-EXPORT-ENV += PATH=$(PKIO-BROWSER-DIR):$(PATH)
@@ -81,9 +82,12 @@ defn mk-browser-deps(data):
       vector:
         mk-entry('--read' '/opt/google/chrome')
         mk-entry('--read' '/dev/dri')
+        mk-entry('--allow-unix-socket-dir' '/tmp/.X11-unix')
         mk-entry('--allow' '/run/user/$(shell id -u)')
         mk-entry('--allow-unix-socket' '/run/user/$(shell id -u)/bus')
         mk-entry('--allow-unix-socket-dir' '/run/user/$(shell id -u)')
+        mk-entry('--read-file' '/run/user/$(shell id -u)/gdm/Xauthority')
+        mk-entry('--read-file' '~/.Xauthority')
         mk-entry('--allow' '/tmp')
         mk-entry('--allow' '~/.config/google-chrome')
         mk-entry('--allow' '~/.local/share/applications')
