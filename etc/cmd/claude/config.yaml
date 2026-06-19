@@ -26,5 +26,4 @@ read-only:
 - /usr/local/bin
 - /usr/libexec
 - /usr/include
-- ~/.config/gh
 - /etc/gitconfig

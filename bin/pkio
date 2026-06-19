@@ -74,6 +74,8 @@ main() (
 
   export PKIO_PROGRAM=$program
 
+  setup-gh-env
+
   setup-history
 
   if $do_shell; then
@@ -258,6 +260,26 @@ setup() {
       export PKIO_NONO_OPTS_EXTRA
     fi
   fi
+}
+
+setup-gh-env() {
+  case $program in
+    claude|codex) ;;
+    *) return ;;
+  esac
+
+  local token_file=$config_home/gh-token
+  if [[ ! -s $token_file ]]; then
+    return 0
+  fi
+
+  export PKIO_GH_TOKEN_FILE=$token_file
+  export GH_TOKEN
+  GH_TOKEN=$(< "$token_file")
+  export GH_PROMPT_DISABLED=1
+  export GH_NO_UPDATE_NOTIFIER=1
+  GH_CONFIG_DIR=/tmp/pkio-gh-$(id -u)
+  export GH_CONFIG_DIR
 }
 
 build-config() {

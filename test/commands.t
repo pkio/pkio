@@ -49,12 +49,18 @@ output=$("$pkio" --show-config codex)
 ok $? "--show-config codex exits successfully"
 like "$output" "rg.mk" \
   "--show-config codex includes rg makes dependency"
+unlike "$output" '\.config/gh' \
+  "--show-config codex does not expose normal gh config"
 printf '%s\n' "$output" > "$tmp/codex-config.mk"
 output=$(PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
   make --no-print-directory -f "$ROOT/Makefile" pkio-env)
 ok $? "pkio-env codex exits successfully"
 like "$output" 'projects\.".*"\.trust_level="trusted"' \
   "pkio-env codex trusts current project for this run"
+unlike "$output" "pkio-gh-readonly" \
+  "pkio-env codex does not use read-only gh wrapper"
+like "$output" "PKIO_GH_TOKEN_FILE=$PKIO_CONFIG/gh-token" \
+  "pkio-env codex exports default gh token file"
 mkdir -p "$HOME/.codex"
 cat > "$HOME/.codex/config.toml" <<EOF
 [projects."$save_dir"]
@@ -70,6 +76,8 @@ like "$(cat "$HOME/.codex/config.toml")" 'trust_level = "trusted"' \
 # claude uses nono wrap so nono does not inject its URL-opening helper.
 output=$("$pkio" --show-config claude)
 ok $? "--show-config claude exits successfully"
+unlike "$output" '\.config/gh' \
+  "--show-config claude does not expose normal gh config"
 printf '%s\n' "$output" > "$tmp/claude-config.mk"
 output=$(PKIO_PROGRAM=claude PKIO_CONFIG_MK=$tmp/claude-config.mk \
   make --no-print-directory -f "$ROOT/Makefile" pkio-env)
@@ -78,6 +86,50 @@ like "$output" "PKIO_NONO_CMD='wrap'" \
   "pkio-env claude uses nono wrap"
 like "$output" "--profile $ROOT/etc/cmd/claude/profile.json" \
   "pkio-env claude uses pkio claude profile"
+unlike "$output" "pkio-gh-readonly" \
+  "pkio-env claude does not use read-only gh wrapper"
+like "$output" "PKIO_GH_TOKEN_FILE=$PKIO_CONFIG/gh-token" \
+  "pkio-env claude exports default gh token file"
+
+mkdir -p "$PKIO_CONFIG"
+echo "test-token" > "$PKIO_CONFIG/gh-token"
+output=$(bash -c '
+  set -euo pipefail
+  source "$1"
+  config_home=$2
+  program=codex
+  setup-gh-env
+  [[ ${GH_TOKEN-} == test-token ]]
+  [[ ${PKIO_GH_TOKEN_FILE-} == "$2/gh-token" ]]
+  [[ ${GH_PROMPT_DISABLED-} == 1 ]]
+  [[ ${GH_NO_UPDATE_NOTIFIER-} == 1 ]]
+  [[ ${GH_CONFIG_DIR-} == "/tmp/pkio-gh-$(id -u)" ]]
+' bash "$pkio" "$PKIO_CONFIG" 2>&1)
+ok $? "setup-gh-env exports read-only gh environment for codex"
+is "$output" "" \
+  "setup-gh-env test does not print gh token"
+output=$(bash -c '
+  set -euo pipefail
+  source "$1"
+  config_home=$2
+  program=make
+  setup-gh-env
+  [[ -z ${GH_TOKEN-} ]]
+  [[ -z ${PKIO_GH_TOKEN_FILE-} ]]
+' bash "$pkio" "$PKIO_CONFIG" 2>&1)
+ok $? "setup-gh-env ignores non-agent programs"
+output=$(PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+like "$output" "--read-file $PKIO_CONFIG/gh-token" \
+  "pkio-env codex grants read-only access to gh token file"
+unlike "$output" "test-token" \
+  "pkio-env codex does not print gh token contents"
+output=$(PKIO_PROGRAM=claude PKIO_CONFIG_MK=$tmp/claude-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+like "$output" "--read-file $PKIO_CONFIG/gh-token" \
+  "pkio-env claude grants read-only access to gh token file"
+unlike "$output" "test-token" \
+  "pkio-env claude does not print gh token contents"
 
 # claude browser defaults export browser opener wrappers
 output=$("$pkio" --show-config claude)

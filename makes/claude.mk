@@ -2,7 +2,7 @@ ifndef PKIO-CLAUDE-LOADED
 PKIO-CLAUDE-LOADED := true
 PKIO-PROGRAM-LOADED := true
 
-include $(MAKES)/gh.mk
+include $(PKIO_ROOT)/makes/gh-readonly.mk
 include $(MAKES)/jq.mk
 
 PKIO-NONO-OPTS += \
@@ -10,7 +10,7 @@ PKIO-NONO-OPTS += \
 
 PKIO-NONO-CMD := wrap
 
-CLAUDE-NONO-DEPS ?= $(GH)
+CLAUDE-NONO-DEPS ?= $(PKIO-GH-READONLY-DEPS)
 
 # Make CLAUDE_CONFIG_DIR visible to the pre-sandbox auth check below.
 # The sandbox itself picks the same value up from config.yaml's env:

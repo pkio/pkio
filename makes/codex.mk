@@ -14,6 +14,8 @@ PKIO-EXPORT-ENV += PATH=$(PATH)
 CODEX-CONFIG ?= $(or $(CODEX_HOME),$(HOME)/.codex)/config.toml
 CODEX-PROJECT-KEY := [projects."$(PKIO_BASE)"]
 
+include $(PKIO_ROOT)/makes/gh-readonly.mk
+
 _codex-trust-project:
 	@mkdir -p "$(dir $(CODEX-CONFIG))"
 	@touch "$(CODEX-CONFIG)"
@@ -23,6 +25,6 @@ _codex-trust-project:
 	  printf '\n%s\ntrust_level = "trusted"\n' '$(CODEX-PROJECT-KEY)' >> "$(CODEX-CONFIG)"; \
 	fi
 
-pkio-setup: _codex-trust-project $(NONO) $(RG) $(NODE)
+pkio-setup: _codex-trust-project $(NONO) $(RG) $(NODE) $(PKIO-GH-READONLY-DEPS)
 
 endif
