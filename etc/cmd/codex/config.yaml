@@ -2,6 +2,10 @@
 
 profile: codex
 
+env:
+  TMPDIR: /tmp
+  SQLITE_TMPDIR: /tmp
+
 cmd-args:
 - --dangerously-bypass-approvals-and-sandbox
 - -c
