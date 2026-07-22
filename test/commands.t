@@ -45,10 +45,19 @@ like "$output" "--profile opencode" \
   "--show-config opencode includes opencode profile"
 
 # --show-config includes codex rg dependency
+cache_test_project=$tmp/cache-test-project
+mkdir -p "$cache_test_project"
+git -C "$cache_test_project" init -q
+cd "$cache_test_project" || exit
 output=$("$pkio" --show-config codex)
 ok $? "--show-config codex exits successfully"
 like "$output" "rg.mk" \
   "--show-config codex includes rg makes dependency"
+if test -d "$PKIO_CACHE/makes"; then rc=0; else rc=1; fi
+ok $rc "--show-config uses the configured pkio cache for makes"
+if test ! -e "$cache_test_project/.cache"; then rc=0; else rc=1; fi
+ok $rc "--show-config does not create a project-local cache"
+cd "$save_dir" || exit
 unlike "$output" '\.config/gh' \
   "--show-config codex does not expose normal gh config"
 printf '%s\n' "$output" > "$tmp/codex-config.mk"
@@ -57,6 +66,8 @@ output=$(PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
 ok $? "pkio-env codex exits successfully"
 like "$output" 'projects\.".*"\.trust_level="trusted"' \
   "pkio-env codex trusts current project for this run"
+like "$output" "--allow $PKIO_CACHE" \
+  "pkio-env codex grants access to the configured pkio cache"
 unlike "$output" "pkio-gh-readonly" \
   "pkio-env codex does not use read-only gh wrapper"
 like "$output" "PKIO_GH_TOKEN_FILE=$PKIO_CONFIG/gh-token" \
@@ -84,6 +95,8 @@ output=$(PKIO_PROGRAM=claude PKIO_CONFIG_MK=$tmp/claude-config.mk \
 ok $? "pkio-env claude exits successfully"
 like "$output" "PKIO_NONO_CMD='wrap'" \
   "pkio-env claude uses nono wrap"
+like "$output" "--allow $PKIO_CACHE" \
+  "pkio-env claude grants access to the configured pkio cache"
 like "$output" "--profile $ROOT/etc/cmd/claude/profile.json" \
   "pkio-env claude uses pkio claude profile"
 unlike "$output" "pkio-gh-readonly" \

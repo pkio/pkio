@@ -18,6 +18,7 @@ read-write:
 - /tmp
 - /tmp/claude-$(shell id -u)
 - ~/.cache/makes
+- $(PKIO_CACHE)
 - ~/.claude/plugins/
 
 read-only:

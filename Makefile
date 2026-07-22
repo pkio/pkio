@@ -1,12 +1,8 @@
 PKIO_ROOT ?= $(patsubst %/,%,$(dir $(abspath $(firstword $(MAKEFILE_LIST)))))
 
-ifeq (,$(shell cat $(HOME)/.cache/pkio/makes/init.mk >/dev/null 2>&1 || echo in-pkio))
-M := $(HOME)/.cache/pkio/makes
-export MAKES_LOCAL_DIR := $(HOME)/.cache/pkio/local
-else
-M := .cache/makes
-export MAKES_LOCAL_DIR := .cache/local
-endif
+PKIO_CACHE ?= $(HOME)/.cache/pkio
+M := $(PKIO_CACHE)/makes
+export MAKES_LOCAL_DIR := $(PKIO_CACHE)/local
 
 R := https://github.com/makeplus/makes
 C := a122d34612825bf4f35d8f8606904dd80403936b
@@ -41,7 +37,7 @@ include $M/shellcheck.mk
 include $M/shell.mk
 include $M/clean.mk
 
-MAKES-REALCLEAN += $(HOME)/.cache/pkio/local $(HOME)/.cache/pkio/makes
+MAKES-REALCLEAN += $(PKIO_CACHE)/local $(PKIO_CACHE)/makes
 
 MANPAGE-SRC := $(PKIO_ROOT)/ReadMe.md
 MANPAGE-OUT := $(PKIO_ROOT)/man/man1/pkio.1

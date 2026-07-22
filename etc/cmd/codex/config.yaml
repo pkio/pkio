@@ -21,6 +21,7 @@ read-write:
 - ~/.codex/
 - /tmp
 - ~/.cache/makes
+- $(PKIO_CACHE)
 
 read-only:
 - /proc
