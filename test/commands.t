@@ -84,6 +84,28 @@ ok $? "codex project trust setup exits successfully"
 like "$(cat "$HOME/.codex/config.toml")" 'trust_level = "trusted"' \
   "codex project trust setup persists trusted project"
 
+# codex links a project AGENTS.md supplied from pkio config.
+agents_project=$tmp/agents-project
+agents_source=$HOME/.config/pkio${agents_project}/AGENTS.md
+mkdir -p "$agents_project" "$(dirname "$agents_source")"
+printf '%s\n' "configured agents instructions" > "$agents_source"
+cd "$agents_project" || exit
+output=$(PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" _agents-md-link)
+ok $? "codex AGENTS.md link setup exits successfully"
+if test -L "$agents_project/AGENTS.md"; then rc=0; else rc=1; fi
+ok $rc "codex links AGENTS.md from project config"
+is "$(readlink "$agents_project/AGENTS.md")" "$agents_source" \
+  "codex AGENTS.md link points to project config"
+rm "$agents_project/AGENTS.md"
+printf '%s\n' "existing agents instructions" > "$agents_project/AGENTS.md"
+output=$(PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" _agents-md-link)
+ok $? "codex AGENTS.md setup preserves an existing file"
+is "$(cat "$agents_project/AGENTS.md")" "existing agents instructions" \
+  "codex does not replace an existing AGENTS.md"
+cd "$save_dir" || exit
+
 # claude uses nono wrap so nono does not inject its URL-opening helper.
 output=$("$pkio" --show-config claude)
 ok $? "--show-config claude exits successfully"

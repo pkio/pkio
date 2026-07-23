@@ -25,6 +25,17 @@ _codex-trust-project:
 	  printf '\n%s\ntrust_level = "trusted"\n' '$(CODEX-PROJECT-KEY)' >> "$(CODEX-CONFIG)"; \
 	fi
 
-pkio-setup: _codex-trust-project $(NONO) $(RG) $(NODE) $(PKIO-GH-READONLY-DEPS)
+# Symlink ./AGENTS.md from config if it exists.
+AGENTS-MD-SOURCE := $(HOME)/.config/pkio$(ROOT)/AGENTS.md
+AGENTS-MD-LINK := $(ROOT)/AGENTS.md
+
+_agents-md-link:
+ifneq (,$(wildcard $(AGENTS-MD-SOURCE)))
+	@if [[ ! -e $(AGENTS-MD-LINK) ]]; then \
+	  ln -s $(AGENTS-MD-SOURCE) $(AGENTS-MD-LINK); \
+	fi
+endif
+
+pkio-setup: _agents-md-link _codex-trust-project $(NONO) $(RG) $(NODE) $(PKIO-GH-READONLY-DEPS)
 
 endif
