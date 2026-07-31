@@ -1,0 +1,7 @@
+# pkio config for code-insiders (VS Code Insiders)
+
+profile: $(PKIO_ROOT)/etc/cmd/code-insiders/profile.json
+
+cmd-args:
+- --no-sandbox
+- --disable-gpu

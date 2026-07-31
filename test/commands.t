@@ -36,6 +36,8 @@ like "$output" "claude" \
   "--list includes claude"
 like "$output" "opencode" \
   "--list includes opencode"
+like "$output" "code-insiders" \
+  "--list includes code-insiders"
 
 
 # --show-config includes opencode defaults
@@ -43,6 +45,37 @@ output=$("$pkio" --show-config opencode)
 ok $? "--show-config opencode exits successfully"
 like "$output" "--profile opencode" \
   "--show-config opencode includes opencode profile"
+
+# --show-config includes native VS Code Insiders defaults
+output=$("$pkio" --show-config code-insiders)
+ok $? "--show-config code-insiders exits successfully"
+pkio_root_re='[$][(]PKIO_ROOT[)]'
+like "$output" "--profile $pkio_root_re/etc/cmd/code-insiders/profile.json" \
+  "--show-config code-insiders includes native profile"
+like "$output" "--no-sandbox" \
+  "--show-config code-insiders disables nested Chromium sandbox"
+like "$output" "--disable-gpu" \
+  "--show-config code-insiders uses software rendering"
+unlike "$output" "/var/lib/snapd" \
+  "--show-config code-insiders excludes snap data"
+printf '%s\n' "$output" > "$tmp/code-insiders-config.mk"
+output=$(PKIO_PROGRAM=code-insiders \
+  PKIO_CONFIG_MK=$tmp/code-insiders-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+like "$output" "PKIO_NONO_CMD='wrap'" \
+  "pkio-env code-insiders uses nono wrap"
+profile=$(cat "$ROOT/etc/cmd/code-insiders/profile.json")
+home_re='[$]HOME'
+like "$profile" "$home_re/.config/Code - Insiders" \
+  "code-insiders profile includes user data"
+like "$profile" "$home_re/.vscode-insiders" \
+  "code-insiders profile includes extensions"
+like "$profile" "$home_re/.vscode-insiders-shared" \
+  "code-insiders profile includes shared state"
+like "$profile" '"ipc_mode": "full"' \
+  "code-insiders profile allows desktop IPC"
+like "$profile" '"/dev/shm"' \
+  "code-insiders profile includes shared memory"
 
 # --show-config includes codex rg dependency
 cache_test_project=$tmp/cache-test-project

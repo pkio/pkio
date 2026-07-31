@@ -1,0 +1,36 @@
+{
+  "$schema": "https://nono.sh/schemas/nono-profile.schema.json",
+  "meta": {
+    "name": "pkio-code-insiders",
+    "description": "VS Code Insiders profile for pkio"
+  },
+  "security": {
+    "ipc_mode": "full"
+  },
+  "filesystem": {
+    "allow": [
+      "/dev/shm",
+      "/tmp",
+      "/tmp/.X11-unix",
+      "/run/user/$UID",
+      "$HOME/.config/Code - Insiders",
+      "$HOME/.vscode-insiders",
+      "$HOME/.vscode-insiders-shared",
+      "$HOME/.copilot",
+      "$HOME/.cache/Microsoft/DeveloperTools",
+      "$HOME/.cache/gtk-3.0"
+    ],
+    "read": [
+      "/proc",
+      "/usr/bin",
+      "/usr/local/bin",
+      "/usr/libexec",
+      "$HOME/.config/gtk-3.0",
+      "$HOME/.ssh"
+    ],
+    "read_file": [
+      "/etc/gitconfig",
+      "$HOME/.XCompose"
+    ]
+  }
+}
