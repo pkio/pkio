@@ -1,8 +1,8 @@
 {
   "$schema": "https://nono.sh/schemas/nono-profile.schema.json",
   "meta": {
-    "name": "pkio-code-insiders",
-    "description": "VS Code Insiders profile for pkio"
+    "name": "pkio-code",
+    "description": "VS Code profile for pkio"
   },
   "groups": {
     "include": [
@@ -30,9 +30,8 @@
       "/tmp",
       "/tmp/.X11-unix",
       "/run/user/$UID",
-      "$HOME/.config/Code - Insiders",
-      "$HOME/.vscode-insiders",
-      "$HOME/.vscode-insiders-shared",
+      "$HOME/.config/Code",
+      "$HOME/.vscode",
       "$HOME/.copilot",
       "$HOME/.claude",
       "$HOME/.cache/claude",

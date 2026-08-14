@@ -1,16 +1,7 @@
 # pkio config for code (VS Code)
 
-read-write:
-- /tmp
-- ~/.config/Code
-- ~/.vscode
-- /var/lib/snapd
+profile: $(PKIO_ROOT)/etc/cmd/code/profile.json
 
-read-only:
-- /proc
-- /usr/bin
-- /usr/local/bin
-- /usr/libexec
-- /snap
-- ~/.ssh
-- /etc/gitconfig
+cmd-args:
+- --no-sandbox
+- --disable-gpu

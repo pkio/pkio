@@ -13,7 +13,8 @@ export PKIO_ROOT=$ROOT
 export PKIO_CONFIG=$tmp/config
 export PKIO_CACHE=$tmp/cache
 export HOME=$tmp/home
-unset NONO_CAP_FILE
+unset NONO_CAP_FILE PKIO_GH_TOKEN_FILE GH_TOKEN GH_PROMPT_DISABLED
+unset GH_NO_UPDATE_NOTIFIER GH_CONFIG_DIR
 
 save_dir=$PWD
 
@@ -38,6 +39,8 @@ like "$output" "opencode" \
   "--list includes opencode"
 like "$output" "code-insiders" \
   "--list includes code-insiders"
+like "$output" "  code" \
+  "--list includes code"
 
 
 # --show-config includes opencode defaults
@@ -46,10 +49,30 @@ ok $? "--show-config opencode exits successfully"
 like "$output" "--profile opencode" \
   "--show-config opencode includes opencode profile"
 
+# --show-config includes native VS Code defaults
+output=$("$pkio" --show-config code)
+ok $? "--show-config code exits successfully"
+pkio_root_re='[$][(]PKIO_ROOT[)]'
+like "$output" "--profile $pkio_root_re/etc/cmd/code/profile.json" \
+  "--show-config code includes native profile"
+like "$output" "--no-sandbox" \
+  "--show-config code disables nested Chromium sandbox"
+like "$output" "--disable-gpu" \
+  "--show-config code uses software rendering"
+unlike "$output" "/var/lib/snapd" \
+  "--show-config code excludes snap data"
+unlike "$output" "--read /snap" \
+  "--show-config code excludes the snap mount"
+printf '%s\n' "$output" > "$tmp/code-config.mk"
+output=$(PKIO_PROGRAM=code \
+  PKIO_CONFIG_MK=$tmp/code-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+like "$output" "PKIO_NONO_CMD='wrap'" \
+  "pkio-env code uses nono wrap"
+
 # --show-config includes native VS Code Insiders defaults
 output=$("$pkio" --show-config code-insiders)
 ok $? "--show-config code-insiders exits successfully"
-pkio_root_re='[$][(]PKIO_ROOT[)]'
 like "$output" "--profile $pkio_root_re/etc/cmd/code-insiders/profile.json" \
   "--show-config code-insiders includes native profile"
 like "$output" "--no-sandbox" \
@@ -64,18 +87,69 @@ output=$(PKIO_PROGRAM=code-insiders \
   make --no-print-directory -f "$ROOT/Makefile" pkio-env)
 like "$output" "PKIO_NONO_CMD='wrap'" \
   "pkio-env code-insiders uses nono wrap"
-profile=$(cat "$ROOT/etc/cmd/code-insiders/profile.json")
+
 home_re='[$]HOME'
+check-agent-profile() {
+  local profile=$1 editor=$2
+  like "$profile" '"claude_code_linux"' \
+    "$editor profile includes Claude runtime state"
+  like "$profile" '"claude_cache_linux"' \
+    "$editor profile includes Claude cache state"
+  like "$profile" '"vscode_linux"' \
+    "$editor profile includes Claude's VS Code permissions"
+  like "$profile" '"node_runtime"' \
+    "$editor profile includes agent tool runtimes"
+  like "$profile" "$home_re/.claude" \
+    "$editor profile shares Claude credentials and state"
+  like "$profile" "$home_re/.cache/claude" \
+    "$editor profile includes Claude cache"
+  like "$profile" "$home_re/.local/state/claude/locks" \
+    "$editor profile includes Claude locks"
+  like "$profile" "$home_re/.claude.json.lock" \
+    "$editor profile includes the Claude config lock"
+  like "$profile" '"/tmp/claude-[$]UID"' \
+    "$editor profile includes Claude temporary state"
+  like "$profile" "$home_re/.codex" \
+    "$editor profile shares Codex credentials and state"
+  like "$profile" "$home_re/.agents" \
+    "$editor profile includes shared agent state"
+  like "$profile" '"https://auth.openai.com"' \
+    "$editor profile permits Codex login URLs"
+  like "$profile" '"https://claude.ai"' \
+    "$editor profile permits Claude login URLs"
+  like "$profile" '"allow_localhost": true' \
+    "$editor profile permits local OAuth callbacks"
+  like "$profile" '"/etc/fonts"' \
+    "$editor profile includes system font configuration"
+  like "$profile" '"/var/cache/fontconfig"' \
+    "$editor profile includes the system font cache"
+  like "$profile" '"/dev/ptmx"' \
+    "$editor profile can allocate pseudo-terminals"
+  like "$profile" '"/etc/shells"' \
+    "$editor profile can discover terminal profiles"
+  like "$profile" '"ipc_mode": "full"' \
+    "$editor profile allows desktop IPC"
+  like "$profile" '"access": "readwrite"' \
+    "$editor profile grants its working directory read-write"
+  like "$profile" '"/dev/shm"' \
+    "$editor profile includes shared memory"
+}
+
+profile=$(cat "$ROOT/etc/cmd/code/profile.json")
+like "$profile" "$home_re/.config/Code" \
+  "code profile includes user data"
+like "$profile" "$home_re/.vscode" \
+  "code profile includes extensions"
+check-agent-profile "$profile" code
+
+profile=$(cat "$ROOT/etc/cmd/code-insiders/profile.json")
 like "$profile" "$home_re/.config/Code - Insiders" \
   "code-insiders profile includes user data"
 like "$profile" "$home_re/.vscode-insiders" \
   "code-insiders profile includes extensions"
 like "$profile" "$home_re/.vscode-insiders-shared" \
   "code-insiders profile includes shared state"
-like "$profile" '"ipc_mode": "full"' \
-  "code-insiders profile allows desktop IPC"
-like "$profile" '"/dev/shm"' \
-  "code-insiders profile includes shared memory"
+check-agent-profile "$profile" code-insiders
 
 # --show-config includes codex rg dependency
 cache_test_project=$tmp/cache-test-project
