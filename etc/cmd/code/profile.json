@@ -64,6 +64,7 @@
     ],
     "read_file": [
       "/etc/gitconfig",
+      "/etc/passwd",
       "/etc/shells",
       "$HOME/.XCompose"
     ]

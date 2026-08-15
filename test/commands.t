@@ -125,6 +125,8 @@ check-agent-profile() {
     "$editor profile includes the system font cache"
   like "$profile" '"/dev/ptmx"' \
     "$editor profile can allocate pseudo-terminals"
+  like "$profile" '"/etc/passwd"' \
+    "$editor profile can resolve local users"
   like "$profile" '"/etc/shells"' \
     "$editor profile can discover terminal profiles"
   like "$profile" '"ipc_mode": "full"' \

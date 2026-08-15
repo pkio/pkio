@@ -174,6 +174,7 @@ for editor in code code-insiders; do
     "r+w  /dev/ptmx (file)" \
     "r   /etc/fonts (dir)" \
     "r   /var/cache/fontconfig (dir)" \
+    "r   /etc/passwd (file)" \
     "r   /etc/shells (file)"
   do
     if grep -F "$capability" <<< "$profile_output" >/dev/null; then
