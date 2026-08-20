@@ -24,6 +24,7 @@ read-write:
 - $(PKIO_CACHE)
 
 read-only:
+- ~/.config/pkio/cache/claude/CLAUDE.md
 - /proc
 - /usr/bin
 - /usr/local/bin

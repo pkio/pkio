@@ -177,6 +177,10 @@ like "$output" 'projects\.".*"\.trust_level="trusted"' \
   "pkio-env codex trusts current project for this run"
 like "$output" "--allow $PKIO_CACHE" \
   "pkio-env codex grants access to the configured pkio cache"
+like "$output" "--allow $HOME/.codex" \
+  "pkio-env codex grants access to global Codex instructions"
+like "$output" "--read-file $HOME/.config/pkio/cache/claude/CLAUDE.md" \
+  "pkio-env codex grants read access to global Claude instructions"
 unlike "$output" "pkio-gh-readonly" \
   "pkio-env codex does not use read-only gh wrapper"
 like "$output" "PKIO_GH_TOKEN_FILE=$PKIO_CONFIG/gh-token" \
@@ -228,6 +232,10 @@ like "$output" "PKIO_NONO_CMD='wrap'" \
   "pkio-env claude uses nono wrap"
 like "$output" "--allow $PKIO_CACHE" \
   "pkio-env claude grants access to the configured pkio cache"
+like "$output" "--allow $HOME/.config/pkio/cache/claude" \
+  "pkio-env claude grants access to global Claude instructions"
+like "$output" "--read-file $HOME/.codex/AGENTS.md" \
+  "pkio-env claude grants read access to global Codex instructions"
 like "$output" "--profile $ROOT/etc/cmd/claude/profile.json" \
   "pkio-env claude uses pkio claude profile"
 unlike "$output" "pkio-gh-readonly" \
