@@ -142,6 +142,8 @@ like "$profile" "$home_re/.config/Code" \
   "code profile includes user data"
 like "$profile" "$home_re/.vscode" \
   "code profile includes extensions"
+like "$profile" "$home_re/.vscode-shared" \
+  "code profile includes shared state"
 check-agent-profile "$profile" code
 
 profile=$(cat "$ROOT/etc/cmd/code-insiders/profile.json")

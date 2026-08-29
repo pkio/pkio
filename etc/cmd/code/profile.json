@@ -32,6 +32,7 @@
       "/run/user/$UID",
       "$HOME/.config/Code",
       "$HOME/.vscode",
+      "$HOME/.vscode-shared",
       "$HOME/.copilot",
       "$HOME/.claude",
       "$HOME/.cache/claude",
