@@ -2,6 +2,8 @@
 
 profile: $(PKIO_ROOT)/etc/cmd/code-insiders/profile.json
 
+browser: desktop-portal
+
 cmd-args:
 - --no-sandbox
 - --disable-gpu

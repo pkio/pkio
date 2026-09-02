@@ -59,6 +59,14 @@ like "$output" "--no-sandbox" \
   "--show-config code disables nested Chromium sandbox"
 like "$output" "--disable-gpu" \
   "--show-config code uses software rendering"
+like "$output" 'BROWSER-OPENERS := chromium chromium-browser xdg-open' \
+  "--show-config code creates Chromium portal openers"
+like "$output" 'BROWSER-SHIM-SOURCE := .*util/portal-open' \
+  "--show-config code installs the portal opener"
+like "$output" '--read-file /usr/bin/gdbus' \
+  "--show-config code permits the portal client"
+like "$output" '--allow-unix-socket /run/user/.*?/bus' \
+  "--show-config code permits the desktop session bus"
 unlike "$output" "/var/lib/snapd" \
   "--show-config code excludes snap data"
 unlike "$output" "--read /snap" \
@@ -79,6 +87,14 @@ like "$output" "--no-sandbox" \
   "--show-config code-insiders disables nested Chromium sandbox"
 like "$output" "--disable-gpu" \
   "--show-config code-insiders uses software rendering"
+like "$output" 'BROWSER-OPENERS := chromium chromium-browser xdg-open' \
+  "--show-config code-insiders creates Chromium portal openers"
+like "$output" 'BROWSER-SHIM-SOURCE := .*util/portal-open' \
+  "--show-config code-insiders installs the portal opener"
+like "$output" '--read-file /usr/bin/gdbus' \
+  "--show-config code-insiders permits the portal client"
+like "$output" '--allow-unix-socket /run/user/.*?/bus' \
+  "--show-config code-insiders permits the desktop session bus"
 unlike "$output" "/var/lib/snapd" \
   "--show-config code-insiders excludes snap data"
 printf '%s\n' "$output" > "$tmp/code-insiders-config.mk"

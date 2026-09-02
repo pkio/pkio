@@ -1,6 +1,7 @@
 # pkio config file
 
 # browser: google-chrome
+# browser: desktop-portal
 
 # See https://github.com/makeplus/makes for available modules.
 # makes:

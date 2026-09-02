@@ -118,6 +118,11 @@ The `profile:` key selects a nono base profile (e.g. `codex`,
 `claude-code`) and is passed through as `nono --profile <name>`.
 It must be a single string, not a list.
 
+The `browser:` key selects URL opener integration.
+Use `google-chrome` to run native Google Chrome inside the sandbox.
+Use `desktop-portal` to ask the desktop to open URLs with its default
+browser outside the sandbox.
+
 ## Installation
 
 Clone the repository and source the shell init file:

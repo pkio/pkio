@@ -3,8 +3,15 @@
 source test/init
 
 pkio=$ROOT/bin/pkio
-real_nono=$(command -v nono)
-real_ys=$(make --no-print-directory -s -f "$ROOT/Makefile" ys)
+real_nono=$(
+  PKIO_CONFIG_MK='' \
+    make --no-print-directory -s -f "$ROOT/Makefile" \
+    shell CMD='command -v nono'
+)
+real_ys=$(
+  PKIO_CONFIG_MK='' \
+    make --no-print-directory -s -f "$ROOT/Makefile" ys
+)
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
@@ -71,7 +78,7 @@ export PKIO_TEST_NONO=$stub_nono
 export PKIO_TEST_YS=$real_ys
 export PKIO_TEST_CWD_FILE=$cwd_file
 export PKIO_TEST_ARGS_FILE=$args_file
-unset NONO_CAP_FILE
+unset NONO_CAP_FILE PKIO_CONFIG_MK
 
 load-capture() {
   IFS= read -r -d '' child_cwd < "$cwd_file" || true
@@ -115,7 +122,7 @@ run-editor() {
   shift
   rm -f "$cwd_file" "$args_file"
   (
-    cd "$worktree"
+    cd "$worktree" || exit
     "$pkio" "$editor" "$@"
   ) >/dev/null 2>&1
   load-capture
@@ -158,7 +165,7 @@ for editor in code code-insiders; do
     "$editor absolute target remains unchanged"
 
   profile_output=$(
-    cd "$worktree"
+    cd "$worktree" || exit
     "$real_nono" wrap --dry-run \
       --profile "$ROOT/etc/cmd/$editor/profile.json" \
       --allow-cwd -- /usr/bin/pwd 2>&1

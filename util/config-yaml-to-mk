@@ -36,12 +36,12 @@ defn check-deprecated(data file):
     die: "'$file' uses 'dirs:' - use 'read-write:' and 'read-only:' instead"
   when data.files:
     die: "'$file' uses 'files:' - use 'read-write:' and 'read-only:' instead"
-  p =: get(data 'path')
+  p =: data.path
   when p && p.prepend:
     die: "'$file' uses 'path: prepend:' - use 'path:' with a list instead"
 
 defn check-profile(data file):
-  p =: get(data 'profile')
+  p =: data.profile
   when p && vector?(p):
     die: "'$file' uses 'profile:' as a list - it must be a string"
 
@@ -50,11 +50,13 @@ defn mk-makefile(data):
 
 defn mk-browser(data):
   browser =: data.browser
-  cond:
-    browser == 'google-chrome':: |-
+  case browser:
+    ? 'google-chrome'
+    : ! |-
       PKIO-BROWSER-DIR := /tmp/claude-$(shell id -u)
       BROWSER-SHIM := $(PKIO-BROWSER-DIR)/browser-shim
-      BROWSER-OPENERS := google-chrome google-chrome-stable xdg-open sensible-browser x-www-browser www-browser gnome-open gio open
+      BROWSER-OPENERS := google-chrome google-chrome-stable xdg-open \
+        sensible-browser x-www-browser www-browser gnome-open gio open
       STALE-CLIPBOARD-SHIMS := xclip xsel
       _ := \
       $(shell \
@@ -62,9 +64,12 @@ defn mk-browser(data):
         ( \
           echo '#!/bin/bash'; \
           echo 'set -u'; \
-          echo 'log=/tmp/claude-$$(id -u)/browser.log'; \
-          echo 'printf "%s %s %q\n" "$$(date +%FT%T%z)" "$$(basename "$$0")" "$$*" >> "$$log"'; \
-          echo 'exec /usr/bin/google-chrome --no-sandbox --disable-dev-shm-usage "$$@" >>"$$log" 2>&1' \
+          echo 'log=$(PKIO-BROWSER-DIR)/browser.log'; \
+          echo 'printf "%s %s %q\n"' \
+            '"$$(date +%FT%T%z)" "$$(basename "$$0")" "$$*"' \
+            '>> "$$log"'; \
+          echo 'exec /usr/bin/google-chrome --no-sandbox' \
+            '--disable-dev-shm-usage "$$@" >>"$$log" 2>&1' \
         ) > $(BROWSER-SHIM) \
           && chmod +x $(BROWSER-SHIM) \
           && rm -f $(addprefix $(PKIO-BROWSER-DIR)/,$(BROWSER-OPENERS)) \
@@ -75,22 +80,54 @@ defn mk-browser(data):
       )
       PKIO-UNSET-ENV += BROWSER
       PKIO-EXPORT-ENV += PATH=$(PKIO-BROWSER-DIR):$(PATH)
+    ? 'desktop-portal'
+    : ! |-
+      PKIO-BROWSER-DIR := /tmp/pkio-browser-$(shell id -u)
+      BROWSER-SHIM := $(PKIO-BROWSER-DIR)/browser-shim
+      BROWSER-SHIM-SOURCE := $(PKIO_ROOT)/util/portal-open
+      BROWSER-OPENERS := chromium chromium-browser xdg-open sensible-browser \
+        x-www-browser www-browser gnome-open gio open
+      _ := \
+      $(shell \
+        mkdir -p $(PKIO-BROWSER-DIR) && \
+        cp $(BROWSER-SHIM-SOURCE) $(BROWSER-SHIM) && \
+        chmod +x $(BROWSER-SHIM) && \
+        rm -f $(addprefix $(PKIO-BROWSER-DIR)/,$(BROWSER-OPENERS)) && \
+        for opener in $(BROWSER-OPENERS); do \
+          ln -sf browser-shim $(PKIO-BROWSER-DIR)/$$opener || exit 1; \
+        done \
+      )
+      PKIO-UNSET-ENV += BROWSER
+      PKIO-EXPORT-ENV += PATH=$(PKIO-BROWSER-DIR):$(PATH)
+    else: nil
 
 defn mk-browser-deps(data):
-  when (data.browser == 'google-chrome') && linux?():
-    joins:
-      vector:
-        mk-entry('--read' '/opt/google/chrome')
-        mk-entry('--read' '/dev/dri')
-        mk-entry('--allow-unix-socket-dir' '/tmp/.X11-unix')
-        mk-entry('--allow' '/run/user/$(shell id -u)')
-        mk-entry('--allow-unix-socket' '/run/user/$(shell id -u)/bus')
-        mk-entry('--allow-unix-socket-dir' '/run/user/$(shell id -u)')
-        mk-entry('--read-file' '/run/user/$(shell id -u)/gdm/Xauthority')
-        mk-entry('--read-file' '~/.Xauthority')
-        mk-entry('--allow' '/tmp')
-        mk-entry('--allow' '~/.config/google-chrome')
-        mk-entry('--allow' '~/.local/share/applications')
+  when linux?():
+    case data.browser:
+      ? 'google-chrome'
+      :
+        joins:
+          vector:
+            mk-entry('--read' '/opt/google/chrome')
+            mk-entry('--read' '/dev/dri')
+            mk-entry('--allow-unix-socket-dir' '/tmp/.X11-unix')
+            mk-entry('--allow' '/run/user/$(shell id -u)')
+            mk-entry('--allow-unix-socket' '/run/user/$(shell id -u)/bus')
+            mk-entry('--allow-unix-socket-dir' '/run/user/$(shell id -u)')
+            mk-entry('--read-file' '/run/user/$(shell id -u)/gdm/Xauthority')
+            mk-entry('--read-file' '~/.Xauthority')
+            mk-entry('--allow' '/tmp')
+            mk-entry('--allow' '~/.config/google-chrome')
+            mk-entry('--allow' '~/.local/share/applications')
+      ? 'desktop-portal'
+      :
+        joins:
+          vector:
+            mk-entry('--read-file' '/usr/bin/gdbus')
+            mk-entry(
+              '--allow-unix-socket'
+              '/run/user/$(shell id -u)/bus')
+      else: nil
 
 defn linux?():
   System/getProperty("os.name") == 'Linux'
@@ -102,7 +139,7 @@ defn mk-makes(data):
         o + "include \\$(MAKES)/$name.mk\n"
 
 defn mk-path(data):
-  p =: get(data 'path')
+  p =: data.path
   when p:
     DBG: "override PATH := $(p.join(':')):\\$(PATH)\nexport PATH"
 
@@ -126,7 +163,7 @@ defn mk-nono-opts(data):
     mk-profile(data)
 
 defn mk-profile(data):
-  p =: get(data 'profile')
+  p =: data.profile
   when p:
     mk-entry('--profile' p)
 
@@ -146,7 +183,7 @@ defn mk-net-ports(ports):
       mk-flag-list(ports.open '--open-port')
 
 defn mk-access(data key dir-flag file-flag):
-  paths =: get(data key)
+  paths =: data.$key
   when paths:
     reduce _ '' paths:
       fn(o path):
@@ -156,7 +193,7 @@ defn path-flag(path dir-flag file-flag):
   path-is-file?(path).if(file-flag dir-flag)
 
 defn path-is-file?(path):
-  s =: str(path)
+  s =: path:S
   p =: expand-home(s)
   when-not re-find(/\$/ s):
     if fs-e(p):
@@ -181,7 +218,7 @@ defn expand-home(path):
     else: path
 
 defn mk-entry(flag val):
-  v =: expand-home(str(val))
+  v =: expand-home(val:S)
   =>: "PKIO-NONO-OPTS += $flag $v\n"
 
 defn mk-flag-list(vals flag):

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+main() {
+  local opener=${0##*/}
+  local opened=false
+  local uri
+
+  if [[ $opener == gio && ${1-} == open ]]; then
+    shift
+  fi
+
+  if [[ ${1-} == -- ]]; then
+    shift
+  fi
+
+  for uri; do
+    [[ $uri =~ ^[a-zA-Z][a-zA-Z0-9+.-]*: ]] || continue
+    open-uri "$uri"
+    opened=true
+  done
+
+  $opened || die "No URL was provided"
+}
+
+open-uri() {
+  local gdbus=${PKIO_PORTAL_GDBUS:-/usr/bin/gdbus}
+  local uri=$1
+
+  "$gdbus" call \
+    --session \
+    --dest org.freedesktop.portal.Desktop \
+    --object-path /org/freedesktop/portal/desktop \
+    --method org.freedesktop.portal.OpenURI.OpenURI \
+    '' "$uri" '{}' >/dev/null
+}
+
+die() {
+  printf 'pkio: portal-open: %s\n' "$1" >&2
+  exit 1
+}
+
+main "$@"
