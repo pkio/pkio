@@ -160,6 +160,8 @@ like "$profile" "$home_re/.vscode" \
   "code profile includes extensions"
 like "$profile" "$home_re/.vscode-shared" \
   "code profile includes shared state"
+like "$profile" "$home_re/.ssh/known_hosts" \
+  "code profile can read SSH known hosts"
 check-agent-profile "$profile" code
 
 profile=$(cat "$ROOT/etc/cmd/code-insiders/profile.json")
@@ -199,6 +201,10 @@ like "$output" "--allow $HOME/.codex" \
   "pkio-env codex grants access to global Codex instructions"
 like "$output" "--read-file $HOME/.config/pkio/cache/claude/CLAUDE.md" \
   "pkio-env codex grants read access to global Claude instructions"
+like "$output" "--read-file /etc/passwd" \
+  "pkio-env codex grants read access to local user information"
+like "$output" "--read-file $HOME/.ssh/known_hosts" \
+  "pkio-env codex grants read access to SSH known hosts"
 unlike "$output" "pkio-gh-readonly" \
   "pkio-env codex does not use read-only gh wrapper"
 like "$output" "PKIO_GH_TOKEN_FILE=$PKIO_CONFIG/gh-token" \
@@ -254,6 +260,10 @@ like "$output" "--allow $HOME/.config/pkio/cache/claude" \
   "pkio-env claude grants access to global Claude instructions"
 like "$output" "--read-file $HOME/.codex/AGENTS.md" \
   "pkio-env claude grants read access to global Codex instructions"
+like "$output" "--read-file /etc/passwd" \
+  "pkio-env claude grants read access to local user information"
+like "$output" "--read-file $HOME/.ssh/known_hosts" \
+  "pkio-env claude grants read access to SSH known hosts"
 like "$output" "--profile $ROOT/etc/cmd/claude/profile.json" \
   "pkio-env claude uses pkio claude profile"
 unlike "$output" "pkio-gh-readonly" \

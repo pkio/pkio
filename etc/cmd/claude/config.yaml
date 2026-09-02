@@ -23,9 +23,11 @@ read-write:
 
 read-only:
 - ~/.codex/AGENTS.md
+- ~/.ssh/known_hosts
 - /proc
 - /usr/bin
 - /usr/local/bin
 - /usr/libexec
 - /usr/include
 - /etc/gitconfig
+- /etc/passwd

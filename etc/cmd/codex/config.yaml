@@ -25,10 +25,12 @@ read-write:
 
 read-only:
 - ~/.config/pkio/cache/claude/CLAUDE.md
+- ~/.ssh/known_hosts
 - /proc
 - /usr/bin
 - /usr/local/bin
 - /usr/libexec
 - /usr/include
 - /etc/gitconfig
+- /etc/passwd
 - /etc/magic

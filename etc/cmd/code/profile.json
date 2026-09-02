@@ -67,6 +67,7 @@
       "/etc/gitconfig",
       "/etc/passwd",
       "/etc/shells",
+      "$HOME/.ssh/known_hosts",
       "$HOME/.XCompose"
     ]
   },
