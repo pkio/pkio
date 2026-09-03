@@ -5,7 +5,7 @@ M := $(PKIO_CACHE)/makes
 export MAKES_LOCAL_DIR := $(PKIO_CACHE)/local
 
 R := https://github.com/makeplus/makes
-C := a122d34612825bf4f35d8f8606904dd80403936b
+C := 0d5f34c1980a15a8542c2c7bf4948ac88c157a1f
 
 $(shell [ -d '$M' ] || git clone -q $R '$M')
 $(shell cd '$M' && [ "$$(git rev-parse HEAD)" = '$C' ] || \
