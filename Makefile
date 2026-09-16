@@ -3,17 +3,12 @@ PKIO_ROOT ?= $(patsubst %/,%,$(dir $(abspath $(firstword $(MAKEFILE_LIST)))))
 PKIO_CACHE ?= $(HOME)/.cache/pkio
 M := $(PKIO_CACHE)/makes
 export MAKES_LOCAL_DIR := $(PKIO_CACHE)/local
-
 R := https://github.com/makeplus/makes
-C := 0d5f34c1980a15a8542c2c7bf4948ac88c157a1f
-
 $(shell [ -d '$M' ] || git clone -q $R '$M')
-$(shell cd '$M' && [ "$$(git rev-parse HEAD)" = '$C' ] || \
-  { git fetch -q origin && git checkout -q '$C'; })
 
 include $M/init.mk
 include $M/nono.mk
-include $M/ys.mk
+include $M/yamlscript.mk
 include $M/md2man.mk
 
 ifdef PKIO_CONFIG_MK
@@ -51,7 +46,6 @@ pkio-env: $(NONO)
 	@$(foreach v,$(PKIO-UNSET-ENV),echo "unset $v";)
 	@$(foreach v,$(PKIO-EXPORT-ENV),echo "export $v";)
 
-.PHONY: ys
 ys: $(YS)
 	@echo $<
 

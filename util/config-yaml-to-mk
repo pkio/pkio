@@ -1,5 +1,7 @@
 #!/usr/bin/env ys-0
 
+use: fs
+
 defn main(program *yaml-files):
   say:
     join "\n\n":
@@ -7,7 +9,7 @@ defn main(program *yaml-files):
         map \(yaml-to-mk(program _)): yaml-files
 
 defn yaml-to-mk(program file):
-  when fs-e(file):
+  when fs/e(file):
     data =: file:load
     when data:
       check-deprecated(data file)
@@ -196,19 +198,19 @@ defn path-is-file?(path):
   s =: path:S
   p =: expand-home(s)
   when-not re-find(/\$/ s):
-    if fs-e(p):
-      not: fs-d(p)
+    if fs/e(p):
+      not: fs/d(p)
       else:
-        ensure-path(p s)
+        ensure-path: p s
 
 defn ensure-path(p s):
   is-dir =: s.ends?('/')
   if is-dir:
-    shell: "mkdir -p '$p'"
+    fs/mkdir-p: p
     else:
       parent =: p.replace(/[^\/]+$/)
-      shell: "mkdir -p '$parent'"
-      shell: "touch '$p'"
+      fs/mkdir-p: parent
+      fs/touch: p
   not: is-dir
 
 defn expand-home(path):

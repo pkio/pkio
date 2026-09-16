@@ -180,6 +180,8 @@ git -C "$cache_test_project" init -q
 cd "$cache_test_project" || exit
 output=$("$pkio" --show-config codex)
 ok $? "--show-config codex exits successfully"
+like "$output" "--profile $pkio_root_re/etc/cmd/codex/profile.json" \
+  "--show-config codex includes native profile"
 like "$output" "rg.mk" \
   "--show-config codex includes rg makes dependency"
 if test -d "$PKIO_CACHE/makes"; then rc=0; else rc=1; fi

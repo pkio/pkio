@@ -1,6 +1,6 @@
 # pkio config for codex (OpenAI Codex CLI)
 
-profile: codex
+profile: $(PKIO_ROOT)/etc/cmd/codex/profile.json
 
 env:
   TMPDIR: /tmp
