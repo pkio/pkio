@@ -46,13 +46,13 @@ like "$output" "  code" \
 # --show-config includes opencode defaults
 output=$("$pkio" --show-config opencode)
 ok $? "--show-config opencode exits successfully"
-like "$output" "--profile opencode" \
-  "--show-config opencode includes opencode profile"
+pkio_root_re='[$][(]PKIO_ROOT[)]'
+like "$output" "--profile $pkio_root_re/etc/cmd/opencode/profile.json" \
+  "--show-config opencode includes native profile"
 
 # --show-config includes native VS Code defaults
 output=$("$pkio" --show-config code)
 ok $? "--show-config code exits successfully"
-pkio_root_re='[$][(]PKIO_ROOT[)]'
 like "$output" "--profile $pkio_root_re/etc/cmd/code/profile.json" \
   "--show-config code includes native profile"
 like "$output" "--no-sandbox" \
@@ -172,6 +172,22 @@ like "$profile" "$home_re/.vscode-insiders" \
 like "$profile" "$home_re/.vscode-insiders-shared" \
   "code-insiders profile includes shared state"
 check-agent-profile "$profile" code-insiders
+
+profile=$(cat "$ROOT/etc/cmd/claude/profile.json")
+like "$profile" '"extends": "default"' \
+  "claude profile does not extend the registry profile"
+like "$profile" '"rollback":' \
+  "claude profile uses the current rollback schema"
+unlike "$profile" '"undo":' \
+  "claude profile excludes the retired undo schema"
+
+profile=$(cat "$ROOT/etc/cmd/opencode/profile.json")
+like "$profile" '"extends": "default"' \
+  "opencode profile does not extend the registry profile"
+like "$profile" '"rollback":' \
+  "opencode profile uses the current rollback schema"
+unlike "$profile" '"undo":' \
+  "opencode profile excludes the retired undo schema"
 
 # --show-config includes codex rg dependency
 cache_test_project=$tmp/cache-test-project

@@ -1,6 +1,6 @@
 # pkio config for opencode
 
-profile: opencode
+profile: $(PKIO_ROOT)/etc/cmd/opencode/profile.json
 
 read-write:
 - ~/.opencode/
