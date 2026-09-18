@@ -46,6 +46,8 @@ pkio-env: $(NONO)
 	@$(foreach v,$(PKIO-UNSET-ENV),echo "unset $v";)
 	@$(foreach v,$(PKIO-EXPORT-ENV),echo "export $v";)
 
+# The caller may have a ys file or directory in its working tree.
+.PHONY: ys
 ys: $(YS)
 	@echo $<
 

@@ -192,6 +192,8 @@ unlike "$profile" '"undo":' \
 # --show-config includes codex rg dependency
 cache_test_project=$tmp/cache-test-project
 mkdir -p "$cache_test_project"
+# A caller's ys directory must not hide the Make target that prints its path.
+mkdir -p "$cache_test_project/ys"
 git -C "$cache_test_project" init -q
 cd "$cache_test_project" || exit
 output=$("$pkio" --show-config codex)
