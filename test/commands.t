@@ -43,6 +43,37 @@ like "$output" "  code" \
   "--list includes code"
 
 
+# Cache cleanup handles read-only directories created by the Go module cache.
+reset_cache=$tmp/reset-cache
+mkdir -p "$reset_cache/local/go/pkg/mod/example"
+echo content > "$reset_cache/local/go/pkg/mod/example/file"
+chmod a-w "$reset_cache/local/go/pkg/mod/example"
+output=$(PKIO_CACHE=$reset_cache "$pkio" --reset 2>&1)
+ok $? "--reset removes a read-only module cache"
+if test ! -e "$reset_cache/local"; then rc=0; else rc=1; fi
+ok $rc "--reset removes the local cache"
+
+update_cache=$tmp/update-cache
+mkdir -p "$update_cache/makes/readonly" \
+  "$update_cache/local/go/pkg/mod/example" "$tmp/fake-bin"
+echo content > "$update_cache/makes/readonly/file"
+echo content > "$update_cache/local/go/pkg/mod/example/file"
+chmod a-w "$update_cache/makes/readonly"
+chmod a-w "$update_cache/local/go/pkg/mod/example"
+cat > "$tmp/fake-bin/git" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$tmp/fake-bin/git"
+output=$(PATH="$tmp/fake-bin:$PATH" PKIO_CACHE=$update_cache \
+  "$pkio" --update 2>&1)
+ok $? "--update removes read-only caches"
+if test ! -e "$update_cache/makes"; then rc=0; else rc=1; fi
+ok $rc "--update removes the makes cache"
+if test ! -e "$update_cache/local"; then rc=0; else rc=1; fi
+ok $rc "--update removes the local cache"
+
+
 # --show-config includes opencode defaults
 output=$("$pkio" --show-config opencode)
 ok $? "--show-config opencode exits successfully"
@@ -188,6 +219,18 @@ like "$profile" '"rollback":' \
   "opencode profile uses the current rollback schema"
 unlike "$profile" '"undo":' \
   "opencode profile excludes the retired undo schema"
+
+profile_nono=$PKIO_CACHE/local/bin/nono
+for file in "$ROOT"/etc/cmd/*/profile.json; do
+  profile_name=${file%/profile.json}
+  profile_name=${profile_name##*/}
+  if "$profile_nono" profile validate "$file" >/dev/null 2>&1; then
+    rc=0
+  else
+    rc=$?
+  fi
+  ok $rc "$profile_name profile validates with installed nono"
+done
 
 # --show-config includes codex rg dependency
 cache_test_project=$tmp/cache-test-project

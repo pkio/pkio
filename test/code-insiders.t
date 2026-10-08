@@ -8,10 +8,13 @@ real_nono=$(
     make --no-print-directory -s -f "$ROOT/Makefile" \
     shell CMD='command -v nono'
 )
+# A cold cache prints dependency installation before the requested path.
+real_nono=${real_nono##*$'\n'}
 real_ys=$(
   PKIO_CONFIG_MK='' \
     make --no-print-directory -s -f "$ROOT/Makefile" ys
 )
+real_ys=${real_ys##*$'\n'}
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT

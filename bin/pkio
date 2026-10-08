@@ -385,15 +385,24 @@ do-update() (
   set -x
   git -C "$PKIO_ROOT" pull --rebase origin main
   cache=${PKIO_CACHE:-$HOME/.cache/pkio}
-  rm -fr "$cache/makes"
-  rm -fr "$cache/local"
+  remove-cache-dir "$cache/makes"
+  remove-cache-dir "$cache/local"
 )
 
 do-reset() (
   cache=${PKIO_CACHE:-$HOME/.cache/pkio}
   set -x
-  rm -fr "$cache/local"
+  remove-cache-dir "$cache/local"
 )
+
+remove-cache-dir() {
+  local dir=$1
+
+  if [[ -d $dir && ! -L $dir ]]; then
+    find "$dir" -type d -exec chmod u+w {} +
+  fi
+  rm -fr "$dir"
+}
 
 do-list() (
   [[ ${PKIO_ROOT-} ]] ||
