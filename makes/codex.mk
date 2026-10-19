@@ -7,6 +7,12 @@ include $(MAKES)/node.mk
 
 PKIO-NONO-OPTS += --read $(LOCAL-BIN)
 PKIO-NONO-OPTS += --read $(NODE-BIN)
+
+# XWayland authentication filenames can change between desktop sessions.
+ifneq (,$(strip $(XAUTHORITY)))
+PKIO-NONO-OPTS += --read-file $(XAUTHORITY)
+endif
+
 PKIO-CMD-ARGS += -c
 PKIO-CMD-ARGS += projects.\"$(PKIO_BASE)\".trust_level=\"trusted\"
 PKIO-EXPORT-ENV += PATH=$(PATH)

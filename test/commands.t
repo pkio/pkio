@@ -272,6 +272,30 @@ unlike "$output" "pkio-gh-readonly" \
   "pkio-env codex does not use read-only gh wrapper"
 like "$output" "PKIO_GH_TOKEN_FILE=$PKIO_CONFIG/gh-token" \
   "pkio-env codex exports default gh token file"
+
+# Codex needs the current desktop session's XWayland authentication file.
+for auth_name in first second; do
+  auth_file=$tmp/.mutter-Xwaylandauth.$auth_name
+  touch "$auth_file"
+  output=$(XAUTHORITY=$auth_file PKIO_PROGRAM=codex \
+    PKIO_CONFIG_MK=$tmp/codex-config.mk \
+    make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+  ok $? "pkio-env codex accepts the $auth_name Xauthority file"
+  like "$output" "--read-file $auth_file" \
+    "pkio-env codex grants read access to the $auth_name Xauthority file"
+done
+for auth_state in unset empty; do
+  output=$(
+    unset XAUTHORITY
+    if [[ $auth_state == empty ]]; then export XAUTHORITY=; fi
+    PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+      make --no-print-directory -f "$ROOT/Makefile" pkio-env
+  )
+  ok $? "pkio-env codex works with XAUTHORITY $auth_state"
+  unlike "$output" '--read-file( +--| *[\x27]?$)' \
+    "pkio-env codex omits an empty Xauthority grant with XAUTHORITY $auth_state"
+done
+
 mkdir -p "$HOME/.codex"
 cat > "$HOME/.codex/config.toml" <<EOF
 [projects."$save_dir"]
