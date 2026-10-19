@@ -97,11 +97,6 @@ main() (
   eval "$env_output"
   PKIO_NONO_CMD=${PKIO_NONO_CMD:-run}
 
-  # Clean up shell rcfile on exit
-  if [[ -n ${shell_rcfile-} ]]; then
-    trap 'rm -rf "$(dirname "$shell_rcfile")"' EXIT
-  fi
-
   # Run nono directly to preserve argument quoting
   # shellcheck disable=2086
   (
@@ -235,12 +230,17 @@ setup() {
   share=$root/share
   config_home=${PKIO_CONFIG:-$HOME/.config/pkio}
   cache_home=${PKIO_CACHE:-$HOME/.cache/pkio}/local
-  tmp_dir=$cache_home/tmp
   cwd=$(pwd -P)
   base=$(get-project-base)
   export PKIO_BASE=$base
 
-  mkdir -p "$tmp_dir"
+  mkdir -p "$cache_home/tmp"
+  tmp_dir=$(mktemp -d "$cache_home/tmp/run.XXXXXXXX")
+  shell_rcfile=
+  trap cleanup EXIT
+
+  # An enclosing pkio session may export its own generated configuration.
+  unset PKIO_CONFIG_MK
 
   # When in a git worktree, .git is a file pointing to the real git dir.
   # Grant read-write access to the actual .git directory so git works.
@@ -259,6 +259,13 @@ setup() {
       PKIO_NONO_OPTS_EXTRA="${PKIO_NONO_OPTS_EXTRA-} --allow $git_common_dir"
       export PKIO_NONO_OPTS_EXTRA
     fi
+  fi
+}
+
+cleanup() {
+  rm -rf "$tmp_dir"
+  if [[ -n $shell_rcfile ]]; then
+    rm -rf "$(dirname "$shell_rcfile")"
   fi
 }
 
