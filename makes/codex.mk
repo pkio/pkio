@@ -13,6 +13,20 @@ ifneq (,$(strip $(XAUTHORITY)))
 PKIO-NONO-OPTS += --read-file $(XAUTHORITY)
 endif
 
+# Preserve clipboard access without granting other desktop session sockets.
+ifneq (,$(wildcard /tmp/.X11-unix))
+PKIO-NONO-OPTS += --allow-unix-socket-dir /tmp/.X11-unix
+endif
+ifneq (,$(strip $(WAYLAND_DISPLAY)))
+CODEX-WAYLAND-SOCKET := $(WAYLAND_DISPLAY)
+ifeq (,$(filter /%,$(WAYLAND_DISPLAY)))
+CODEX-WAYLAND-SOCKET := $(XDG_RUNTIME_DIR)/$(WAYLAND_DISPLAY)
+endif
+ifneq (,$(wildcard $(CODEX-WAYLAND-SOCKET)))
+PKIO-NONO-OPTS += --allow-unix-socket $(CODEX-WAYLAND-SOCKET)
+endif
+endif
+
 PKIO-CMD-ARGS += -c
 PKIO-CMD-ARGS += projects.\"$(PKIO_BASE)\".trust_level=\"trusted\"
 PKIO-EXPORT-ENV += PATH=$(PATH)

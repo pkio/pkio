@@ -273,6 +273,27 @@ unlike "$output" "pkio-gh-readonly" \
 like "$output" "PKIO_GH_TOKEN_FILE=$PKIO_CONFIG/gh-token" \
   "pkio-env codex exports default gh token file"
 
+# Clipboard grants must not expose every socket in the runtime directory.
+wayland_socket=$tmp/wayland-current
+touch "$wayland_socket"
+output=$(WAYLAND_DISPLAY=wayland-current XDG_RUNTIME_DIR=$tmp \
+  PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+like "$output" "--allow-unix-socket $wayland_socket( |')" \
+  "pkio-env codex grants the current Wayland socket"
+unlike "$output" "--allow-unix-socket-(dir|subtree) $tmp( |')" \
+  "pkio-env codex does not grant the entire desktop runtime directory"
+output=$(WAYLAND_DISPLAY=$wayland_socket XDG_RUNTIME_DIR=/unused \
+  PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+like "$output" "--allow-unix-socket $wayland_socket( |')" \
+  "pkio-env codex supports an absolute Wayland socket path"
+output=$(WAYLAND_DISPLAY=wayland-missing XDG_RUNTIME_DIR=$tmp \
+  PKIO_PROGRAM=codex PKIO_CONFIG_MK=$tmp/codex-config.mk \
+  make --no-print-directory -f "$ROOT/Makefile" pkio-env)
+unlike "$output" "--allow-unix-socket $tmp/wayland-missing" \
+  "pkio-env codex omits a missing Wayland socket"
+
 # Codex needs the current desktop session's XWayland authentication file.
 for auth_name in first second; do
   auth_file=$tmp/.mutter-Xwaylandauth.$auth_name

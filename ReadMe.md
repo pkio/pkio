@@ -170,6 +170,18 @@ source <(pkio --complete=bash)
 
 ## Environment
 
+Codex does not inherit `SSH_AUTH_SOCK` or `SSH_AGENT_PID`.
+On Linux, its default profile also blocks connections to Unix sockets
+unless they have an explicit socket grant.
+Clipboard sockets for X11 and the current Wayland display are allowed.
+SSH operations that depend on your agent, including private Git fetches
+and agent-backed commit signing, will fail inside Codex.
+Other local Unix socket services may need explicit grants.
+
+These restrictions do not restrict GitHub API token permissions.
+The token in `~/.config/pkio/gh-token` must have read-only permissions
+to prevent API writes, including manual workflow dispatches.
+
 - `PKIO_ROOT` — pkio installation directory (set by `.rc`).
 - `PKIO_CONFIG` — config home (default: `~/.config/pkio`).
 - `PKIO_BASE` — resolved project base path (set at runtime).

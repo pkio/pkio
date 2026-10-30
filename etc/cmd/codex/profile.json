@@ -23,6 +23,12 @@
     "signal_mode": "isolated",
     "capability_elevation": false
   },
+  "environment": {
+    "deny_vars": ["SSH_AUTH_SOCK", "SSH_AGENT_PID"]
+  },
+  "linux": {
+    "af_unix_mediation": "pathname"
+  },
   "filesystem": {
     "allow": [
       "$HOME/.codex",
