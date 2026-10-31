@@ -174,6 +174,8 @@ Codex does not inherit `SSH_AUTH_SOCK` or `SSH_AGENT_PID`.
 On Linux, its default profile also blocks connections to Unix sockets
 unless they have an explicit socket grant.
 Clipboard sockets for X11 and the current Wayland display are allowed.
+PKIO uses nono 0.81.0 to avoid rate-limiting allowed clipboard connections.
+Restart existing sessions to use the updated sandbox.
 SSH operations that depend on your agent, including private Git fetches
 and agent-backed commit signing, will fail inside Codex.
 Other local Unix socket services may need explicit grants.

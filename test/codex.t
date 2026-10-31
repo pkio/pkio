@@ -24,13 +24,17 @@ use File::Basename qw(dirname);
 use File::Path qw(make_path);
 use IO::Socket::UNIX;
 use JSON::PP;
-use Socket qw(SOCK_STREAM);
+use Socket qw(SOCK_DGRAM SOCK_STREAM);
 
 my ($nono, $profile, $tmp) = @ARGV;
 my $socket_path = "$tmp/ssh-agent.sock";
 my $server = IO::Socket::UNIX->new(
     Type => SOCK_STREAM, Local => $socket_path, Listen => 5,
 ) or die "listen: $!";
+my $clipboard_path = "$tmp/clipboard.sock";
+my $clipboard = IO::Socket::UNIX->new(
+    Type => SOCK_DGRAM, Local => $clipboard_path,
+) or die "clipboard socket: $!";
 
 open my $source, '<', $profile or die "read profile: $!";
 my $policy = decode_json(do { local $/; <$source> });
@@ -46,9 +50,9 @@ use strict;
 use warnings;
 use Errno qw(EACCES EPERM);
 use IO::Socket::INET;
-use Socket qw(AF_UNIX SOCK_STREAM sockaddr_un);
+use Socket qw(AF_UNIX SOCK_DGRAM SOCK_STREAM sockaddr_un);
 
-my ($path, $mode) = @ARGV;
+my ($path, $mode, $clipboard_path) = @ARGV;
 my $expected_env = $mode eq 'control' ? 1 : 0;
 die "agent environment leaked\n"
     if exists($ENV{SSH_AUTH_SOCK}) != $expected_env
@@ -65,6 +69,22 @@ if ($mode eq 'blocked') {
     die "connect: $!" unless $connected;
 }
 print "$mode: socket ok\n";
+
+# Clipboard clients probe abstract X11 sockets before falling back to paths.
+# Denied probes must not exhaust a shared budget for explicitly allowed IPC.
+if ($mode eq 'allowed') {
+    for (1 .. 20) {
+        socket(my $abstract, AF_UNIX, SOCK_DGRAM, 0) or die "socket: $!";
+        die "abstract socket accessible\n"
+            if connect($abstract, sockaddr_un("\0pkio-clipboard-$$"));
+        die "unexpected abstract error: $!"
+            unless $! == EACCES || $! == EPERM;
+        socket(my $clipboard, AF_UNIX, SOCK_DGRAM, 0) or die "socket: $!";
+        connect($clipboard, sockaddr_un($clipboard_path))
+            or die "clipboard connection burst: $!";
+    }
+    print "$mode: clipboard socket burst ok\n";
+}
 
 open my $file, '>', 'local-file' or die "local write: $!";
 print {$file} "local work\n";
@@ -88,12 +108,13 @@ make_path($ENV{HOME}, "$tmp/project");
 chdir "$tmp/project" or die "chdir: $!";
 for my $mode (qw(control blocked allowed)) {
     my @grants = $mode eq 'allowed'
-        ? ('--allow-unix-socket', $socket_path) : ();
+        ? ('--allow-unix-socket', $socket_path,
+           '--allow-unix-socket', $clipboard_path) : ();
     system $nono, 'run', '--silent', '--no-rollback',
         '--profile', $mode eq 'control' ? "$tmp/control.json" : $profile,
         '--allow-cwd', '--read', dirname(dirname($^X)), @grants,
         '--read-file', "$tmp/probe.pl",
-        '--', $^X, "$tmp/probe.pl", $socket_path, $mode;
+        '--', $^X, "$tmp/probe.pl", $socket_path, $mode, $clipboard_path;
     die "$mode sandbox failed: $?\n" if $?;
 }
 PERL
@@ -109,5 +130,7 @@ like "$output" 'blocked: local files and TCP ok' \
   "Codex can still read and write local files and use TCP"
 like "$output" 'allowed: socket ok' \
   "explicit socket grants preserve required local services"
+like "$output" 'allowed: clipboard socket burst ok' \
+  "denied abstract probes do not throttle allowed clipboard connections"
 
 done-testing

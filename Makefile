@@ -7,6 +7,8 @@ R := https://github.com/makeplus/makes
 $(shell [ -d '$M' ] || git clone -q $R '$M')
 
 include $M/init.mk
+# Older nono releases rate-limit allowed clipboard socket connections.
+NONO-VERSION ?= 0.81.0
 include $M/nono.mk
 include $M/yamlscript.mk
 include $M/md2man.mk
