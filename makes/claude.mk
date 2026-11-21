@@ -10,6 +10,12 @@ PKIO-NONO-OPTS += \
 
 PKIO-NONO-CMD := wrap
 
+# Claude also loads the main checkout's settings in linked worktrees.
+CLAUDE-MAIN-CONFIG := $(PKIO_BASE)/.claude
+ifneq (,$(wildcard $(CLAUDE-MAIN-CONFIG)))
+PKIO-NONO-OPTS += --read $(CLAUDE-MAIN-CONFIG)
+endif
+
 CLAUDE-NONO-DEPS ?= $(PKIO-GH-READONLY-DEPS)
 
 # Make CLAUDE_CONFIG_DIR visible to the pre-sandbox auth check below.
